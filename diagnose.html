@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>诊断 - 审核问题</title>
+<style>
+body{font-family:system-ui;padding:20px;background:#f5f5f5}
+.card{background:white;border-radius:12px;padding:16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,0.1)}
+.card h3{margin:0 0 12px;color:#2E7D32;font-size:16px}
+pre{background:#f8f8f8;padding:12px;border-radius:8px;overflow:auto;font-size:12px;white-space:pre-wrap;word-break:break-all}
+.red{color:red;font-weight:bold}
+.green{color:green;font-weight:bold}
+.btn{padding:10px 24px;background:#2E7D32;color:white;border:none;border-radius:8px;font-size:15px;margin-right:10px}
+</style>
+</head>
+<body>
+<h2 style="color:#2E7D32">🔍 村主任审核诊断工具</h2>
+
+<div class="card">
+<h3>1️⃣ 登录状态 (village_user)</h3>
+<pre id="userStatus">加载中...</pre>
+</div>
+
+<div class="card">
+<h3>2️⃣ currentRole 详情</h3>
+<pre id="roleDetail">加载中...</pre>
+</div>
+
+<div class="card">
+<h3>3️⃣ 村庄信息 (village_villages)</h3>
+<pre id="villageInfo">加载中...</pre>
+</div>
+
+<div class="card">
+<h3>4️⃣ 农产品申请 (village_product_applications)</h3>
+<pre id="productApps">加载中...</pre>
+</div>
+
+<div class="card">
+<h3>5️⃣ 注册信息 (village_registrations) - 筛选村民</h3>
+<pre id="regsInfo">加载中...</pre>
+</div>
+
+<div class="card">
+<h3>6️⃣ 模拟 auditProducts 过滤逻辑</h3>
+<pre id="auditSim">加载中...</pre>
+</div>
+
+<div style="margin-top:20px">
+<button class="btn" onclick="fixVillage()">🔧 一键修复：给当前账号绑定村庄</button>
+<button class="btn" onclick="location.href='profile.html'" style="background:#FF9800">→ 返回个人中心</button>
+</div>
+
+<script>
+var Storage = {
+  get: function(k,d){try{return JSON.parse(localStorage.getItem('village_'+k))||d}catch(e){return d}},
+  set: function(k,v){localStorage.setItem('village_'+k,JSON.stringify(v))}
+};
+
+function runDiagnose() {
+  // 1. 登录状态
+  var user = Storage.get('user', null);
+  var el = document.getElementById('userStatus');
+  if (!user) {
+    el.innerHTML = '<span class="red">❌ 未登录！请先 <a href="login.html">登录</a></span>';
+  } else {
+    el.innerHTML = '<span class="green">✅ 已登录</span>\n' + JSON.stringify(user, null, 2);
+  }
+
+  // 2. currentRole
+  var roleEl = document.getElementById('roleDetail');
+  if (user && user.currentRole) {
+    var cr = user.currentRole;
+    roleEl.innerHTML = '类型: ' + typeof cr + '\n' + JSON.stringify(cr, null, 2);
+    
+    // 额外检查 village 字段
+    if (typeof cr === 'object') {
+      if (cr.village) {
+        roleEl.innerHTML += '\n\n<span class="green">✅ 有 village 字段: "' + cr.village + '"</span>';
+      } else {
+        roleEl.innerHTML += '\n\n<span class="red">❌ 对象格式但没有 village 字段！这就是根因！</span>';
+      }
+    }
+  } else {
+    roleEl.innerHTML = '<span class="red">❌ 没有 currentRole（或为 none）</span>';
+  }
+
+  // 3. 村庄列表
+  var villages = Storage.get('villages', []);
+  document.getElementById('villageInfo').innerHTML = 
+    '共 ' + villages.length + ' 个村庄\n' + JSON.stringify(villages, null, 2);
+
+  // 4. 产品申请
+  var apps = Storage.get('product_applications', []);
+  document.getElementById('productApps').innerHTML = 
+    '共 ' + apps.length + ' 条申请\n' + JSON.stringify(apps, null, 2);
+
+  // 5. 注册信息
+  var regs = Storage.get('registrations', []);
+  var villagerRegs = regs.filter(function(r) { return r.role === '村民'; });
+  document.getElementById('regsInfo').innerHTML = 
+    '总注册: ' + regs.length + ' 条，村民: ' + villagerRegs.length + ' 条\n' + 
+    JSON.stringify(villagerRegs, null, 2);
+
+  // 6. 模拟审核过滤
+  var simEl = document.getElementById('auditSim');
+  if (!user || !user.currentRole) {
+    simEl.innerHTML = '<span class="red">跳过：未登录或无角色</span>';
+    return;
+  }
+  
+  var myVillageName = '';
+  if (typeof user.currentRole === 'object') {
+    myVillageName = user.currentRole.village || '';
+  } else {
+    // 字符串格式，从 villages 找
+    var mv = villages.find(function(v) { 
+      return v.chief && v.chief.name === user.currentRoleName; 
+    });
+    myVillageName = mv ? mv.name : '';
+  }
+
+  var filtered = apps.filter(function(p) { 
+    return p.village === myVillageName && p.status === '待审核'; 
+  });
+
+  simEl.innerHTML = 
+    '我的村庄名称: "' + myVillageName + '"\n' +
+    '待审核产品总数: ' + apps.filter(function(p){return p.status==='待审核'}).length + '\n' +
+    '匹配本村的待审核: ' + filtered.length + '\n\n' +
+    (filtered.length > 0 ? JSON.stringify(filtered, null, 2) : '<span class="red">❌ 没有匹配的申请！可能原因：</span>\n1. 村庄名称不匹配\n2. 申请里没有 village 字段\n3. 所有申请已处理');
+
+  // 显示每条申请的 village 字段，方便对比
+  if (apps.length > 0) {
+    simEl.innerHTML += '\n\n📋 每条申请的 village 字段:\n';
+    apps.forEach(function(a, i) {
+      simEl.innerHTML += i + '. village="' + (a.village||'(空!)') + '" status=' + a.status + ' name=' + a.name + '\n';
+    });
+  }
+}
+
+function fixVillage() {
+  var user = Storage.get('user', null);
+  if (!user) { alert('请先登录'); return; }
+  
+  var villages = Storage.get('villages', []);
+  var regs = Storage.get('registrations', []);
+  
+  // 方法1：从 registrations 找
+  for (var i = 0; i < regs.length; i++) {
+    if (regs[i].account === user.account && regs[i].village) {
+      if (typeof user.currentRole === 'string') {
+        // 字符串格式，需要转对象来存 village —— 不，保持字符串
+        alert('你的角色是字符串格式("' + user.currentRole + '")，村庄在注册信息里是: "' + regs[i].village + '"\n\n请在 profile.html 的审核函数里优先从 registrations 读取！');
+      } else if (typeof user.currentRole === 'object') {
+        user.currentRole.village = regs[i].village;
+        var accounts = Storage.get('accounts', []);
+        for (var j = 0; j < accounts.length; j++) {
+          if (accounts[j].id === user.id) { accounts[j] = user; break; }
+        }
+        Storage.set('accounts', accounts);
+        Storage.set('user', user);
+        alert('✅ 已修复！村庄已绑定: ' + regs[i].village + '\n\n请返回个人中心刷新');
+        runDiagnose();
+      }
+      return;
+    }
+  }
+  
+  // 方法2：从 villages 数组找（村主任）
+  for (var k = 0; k < villages.length; k++) {
+    if (villages[k].chief && villages[k].chief.name === user.currentRoleName) {
+      if (typeof user.currentRole === 'object') {
+        user.currentRole.village = villages[k].name;
+        var accounts2 = Storage.get('accounts', []);
+        for (var m = 0; m < accounts2.length; m++) {
+          if (accounts2[m].id === user.id) { accounts2[m] = user; break; }
+        }
+        Storage.set('accounts', accounts2);
+        Storage.set('user', user);
+        alert('✅ 已修复！村庄已绑定: ' + villages[k].name + '\n\n请返回个人中心刷新');
+        runDiagnose();
+      } else {
+        alert('找到村庄 "' + villages[k].name + '" 但你的角色是字符串格式，需要代码层面兼容');
+      }
+      return;
+    }
+  }
+  
+  alert('❌ 找不到任何村庄关联信息！\n\n你可能：\n1. 还没创建村庄\n2. 注册时没填村庄名\n3. 账号数据不完整');
+}
+
+runDiagnose();
+</script>
+</body>
+</html>
