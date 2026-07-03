@@ -193,7 +193,7 @@
       }
 
       if (!found) {
-        errorMsg.textContent = '账号不存在';
+        errorMsg.textContent = '��号不存在';
         return;
       }
 
@@ -208,6 +208,14 @@
       }
 
       // 登录成功！保存当前会话
+      // 标记当前账号（设置 _current = true）
+      var accounts = Storage.get('accounts', []);
+      for (var ai = 0; ai < accounts.length; ai++) { delete accounts[ai]._current; }
+      found._current = true;
+      for (var bi = 0; bi < accounts.length; bi++) {
+        if (accounts[bi].id === found.id) { accounts[bi] = found; break; }
+      }
+      Storage.set('accounts', accounts);
       Storage.set('user', found);
 
       // 自动补全 currentRole.village（如果缺失）
@@ -303,5 +311,6 @@
     }
 
 </script>
+<script src="cloud_db.js"></script>
 </body>
 </html>
