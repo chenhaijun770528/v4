@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>管理后台 - 村庄平台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei',sans-serif;background:#f0f2f5;min-height:100vh}
+.topbar{background:#2E7D32;color:#fff;padding:12px 20px;display:flex;align-items:center;gap:16px;font-size:15px}
+.topbar h1{flex:1;font-size:18px;font-weight:600}
+.cloud-dot{width:10px;height:10px;border-radius:50%;background:#666;display:inline-block}
+.cloud-dot.online{background:#4CAF50;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.main{padding:20px;max-width:900px;margin:0 auto}
+.card{background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+.card h2{font-size:16px;color:#333;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #eee}
+.btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:14px;transition:all 0.2s}
+.btn-primary{background:#2E7D32;color:#fff}
+.btn-primary:hover{background:#1B5E20}
+.btn-danger{background:#F44336;color:#fff}
+.btn-danger:hover{background:#D32F2F}
+.btn-sm{padding:5px 12px;font-size:13px}
+.msg{color:#666;font-size:14px;line-height:1.6}
+.msg p{margin:6px 0}
+.reg-item{display:flex;gap:12px;padding:12px;border-bottom:1px solid #f0f0f0;align-items:flex-start}
+.reg-item:last-child{border-bottom:none}
+.reg-info{flex:1}
+.reg-role{font-weight:600;color:#2E7D32;font-size:14px}
+.reg-name{color:#333;font-size:14px;margin-top:2px}
+.reg-phone{color:#999;font-size:13px;margin-top:2px}
+.reg-status{padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600}
+.reg-status.pending{background:#FFF3E0;color:#E65100}
+.reg-status.approved{background:#E8F5E9;color:#2E7D32}
+.reg-status.rejected{background:#FFEBEE;color:#C62828}
+.reg-actions{display:flex;flex-direction:column;gap:6px;min-width:80px}
+.empty{text-align:center;padding:40px;color:#999;font-size:15px}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;background:#e3f2fd;color:#1565c0;margin-left:6px}
+.tab-bar{display:flex;gap:4px;margin-bottom:16px;background:#fff;padding:6px;border-radius:10px}
+.tab{flex:1;padding:10px;text-align:center;border-radius:8px;font-size:14px;color:#666;cursor:pointer;border:none;background:transparent;transition:all 0.2s}
+.tab.active{background:#2E7D32;color:#fff;font-weight:600}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat-card{background:linear-gradient(135deg,#2E7D32,#4CAF50);color:#fff;padding:16px;border-radius:10px;text-align:center}
+.stat-card.blue{background:linear-gradient(135deg,#1565c0,#42a5f5)}
+.stat-card.orange{background:linear-gradient(135deg,#E65100,#FF9800)}
+.stat-card.red{background:linear-gradient(135deg,#C62828,#EF5350)}
+.stat-n{font-size:28px;font-weight:700}
+.stat-l{font-size:12px;opacity:0.9;margin-top:4px}
+.loading{text-align:center;padding:40px;color:#999}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>🏠 村庄平台 管理后台</h1>
+  <span class="cloud-dot" id="cloudDot"></span>
+  <span id="cloudStatus" style="font-size:13px">连接中...</span>
+  <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff" onclick="location.href='index.html'">返回首页</button>
+</div>
+<div class="main">
+  <div class="stat-grid">
+    <div class="stat-card"><div class="stat-n" id="statRegs">-</div><div class="stat-l">待审核</div></div>
+    <div class="stat-card blue"><div class="stat-n" id="statVillages">-</div><div class="stat-l">村庄数</div></div>
+    <div class="stat-card orange"><div class="stat-n" id="statAccounts">-</div><div class="stat-l">账号数</div></div>
+    <div class="stat-card red"><div class="stat-n" id="statCloud">-</div><div class="stat-l">云端状态</div></div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab active" onclick="switchTab('regs')">待审核</button>
+    <button class="tab" onclick="switchTab('villages')">村庄列表</button>
+    <button class="tab" onclick="switchTab('accounts')">账号列表</button>
+  </div>
+  <div class="card" id="regsPanel">
+    <h2>📋 待审核申请 <span class="badge" id="regCount">0</span></h2>
+    <div id="regsList"><div class="loading">加载中...</div></div>
+  </div>
+  <div class="card" id="villagesPanel" style="display:none">
+    <h2>🏘️ 村庄列表</h2>
+    <div id="villagesList"><div class="loading">加载中...</div></div>
+  </div>
+  <div class="card" id="accountsPanel" style="display:none">
+    <h2>👤 账号列表</h2>
+    <div id="accountsList"><div class="loading">加载中...</div></div>
+  </div>
+</div>
+
+<script>
+// Supabase 配置
+var SUPABASE_URL = 'https://eivqbbxyllsorbvgqsju.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpdnFiYnh5bGxzb3Jidmdxc2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MTIzMDksImV4cCI6MjA5ODI4ODMwOX0.QeKnbo1cgA0yGMOEydML3PNXatH1V1QXfW0hyxRy7KY';
+var TABLE = 'village_data';
+var ROW_ID = 'init';
+
+// 云端请求
+function cloudGet(path) {
+  return new Promise(function(res, rej) {
+    var x = new XMLHttpRequest();
+    x.open('GET', SUPABASE_URL + '/rest/v1/' + path, true);
+    x.setRequestHeader('apikey', SUPABASE_KEY);
+    x.setRequestHeader('Authorization', 'Bearer ' + SUPABASE_KEY);
+    x.onreadystatechange = function() {
+      if (x.readyState === 4) {
+        if (x.status >= 200 && x.status < 300) {
+          try { res(JSON.parse(x.responseText)); }
+          catch(e) { res(x.responseText); }
+        } else { rej({ status: x.status, msg: x.statusText }); }
+      }
+    };
+    x.onerror = function() { rej({ status: -1, msg: '网络错误' }); };
+    x.send();
+  });
+}
+
+function cloudPatch(path, body) {
+  return new Promise(function(res, rej) {
+    var x = new XMLHttpRequest();
+    x.open('PATCH', SUPABASE_URL + '/rest/v1/' + path, true);
+    x.setRequestHeader('apikey', SUPABASE_KEY);
+    x.setRequestHeader('Authorization', 'Bearer ' + SUPABASE_KEY);
+    x.setRequestHeader('Content-Type', 'application/json');
+    x.setRequestHeader('Prefer', 'return=minimal');
+    x.onreadystatechange = function() {
+      if (x.readyState === 4) {
+        if (x.status >= 200 && x.status < 300) { res(x.status); }
+        else { rej({ status: x.status, msg: x.statusText }); }
+      }
+    };
+    x.onerror = function() { rej({ status: -1, msg: '网络错误' }); };
+    x.send(JSON.stringify(body));
+  });
+}
+
+function cloudPost(path, body) {
+  return new Promise(function(res, rej) {
+    var x = new XMLHttpRequest();
+    x.open('POST', SUPABASE_URL + '/rest/v1/' + path, true);
+    x.setRequestHeader('apikey', SUPABASE_KEY);
+    x.setRequestHeader('Authorization', 'Bearer ' + SUPABASE_KEY);
+    x.setRequestHeader('Content-Type', 'application/json');
+    x.onreadystatechange = function() {
+      if (x.readyState === 4) {
+        if (x.status >= 200 && x.status < 300) { res(x.status); }
+        else { rej({ status: x.status, msg: x.statusText }); }
+      }
+    };
+    x.onerror = function() { rej({ status: -1, msg: '网络错误' }); };
+    x.send(JSON.stringify(body));
+  });
+}
+
+// 全局数据
+var cloudData = null;
+var isOnline = false;
+
+function setOnline(v) {
+  isOnline = v;
+  var dot = document.getElementById('cloudDot');
+  var status = document.getElementById('cloudStatus');
+  if (v) {
+    dot.className = 'cloud-dot online';
+    status.textContent = '☁️ 云端已连接';
+  } else {
+    dot.className = 'cloud-dot';
+    status.textContent = '⚠️ 云端未连接';
+  }
+}
+
+// 初始化
+async function init() {
+  try {
+    var rows = await cloudGet(TABLE + '?id=eq.' + ROW_ID + '&select=*');
+    if (rows && rows.length > 0) {
+      cloudData = rows[0].data || {};
+      setOnline(true);
+      document.getElementById('statCloud').textContent = '✅';
+      renderAll();
+    } else {
+      setOnline(false);
+      cloudData = { registrations: [], villages: [], accounts: [] };
+      renderAll();
+    }
+  } catch(e) {
+    setOnline(false);
+    cloudData = { registrations: [], villages: [], accounts: [] };
+    renderAll();
+  }
+}
+
+function ensureData() {
+  if (!cloudData) cloudData = { registrations: [], villages: [], accounts: [] };
+  if (!cloudData.registrations) cloudData.registrations = [];
+  if (!cloudData.villages) cloudData.villages = [];
+  if (!cloudData.accounts) cloudData.accounts = [];
+}
+
+function renderAll() {
+  ensureData();
+  var regs = cloudData.registrations || [];
+  var pending = regs.filter(function(r) { return r.status === '待审核'; });
+  var villages = cloudData.villages || [];
+  var accounts = cloudData.accounts || [];
+  
+  document.getElementById('statRegs').textContent = pending.length;
+  document.getElementById('statVillages').textContent = villages.length;
+  document.getElementById('statAccounts').textContent = accounts.length;
+  document.getElementById('regCount').textContent = pending.length;
+  
+  renderRegs(pending);
+  renderVillages(villages);
+  renderAccounts(accounts);
+}
+
+function renderRegs(regs) {
+  var el = document.getElementById('regsList');
+  if (regs.length === 0) {
+    el.innerHTML = '<div class="empty">暂无待审核申请</div>';
+    return;
+  }
+  var html = '';
+  regs.forEach(function(r) {
+    html += '<div class="reg-item">';
+    html += '<div class="reg-info">';
+    html += '<div class="reg-role">' + escHtml(r.role || '') + '</div>';
+    html += '<div class="reg-name">姓名: ' + escHtml(r.name || '') + '</div>';
+    html += '<div class="reg-phone">电话: ' + escHtml(r.phone || '') + '</div>';
+    if (r.village) html += '<div class="reg-phone">村庄: ' + escHtml(r.village) + '</div>';
+    html += '<div class="reg-phone" style="color:#999;font-size:12px">ID: ' + r.id + '</div>';
+    html += '</div>';
+    html += '<div class="reg-actions">';
+    html += '<button class="btn btn-primary btn-sm" onclick="approveReg(\'' + r.id + '\')">通过</button>';
+    html += '<button class="btn btn-danger btn-sm" onclick="rejectReg(\'' + r.id + '\')">拒绝</button>';
+    html += '</div>';
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function renderVillages(villages) {
+  var el = document.getElementById('villagesList');
+  if (villages.length === 0) {
+    el.innerHTML = '<div class="empty">暂无村庄</div>';
+    return;
+  }
+  var html = '<div style="font-size:13px;color:#666;margin-bottom:12px">共 ' + villages.length + ' 个村庄</div>';
+  villages.forEach(function(v) {
+    html += '<div class="reg-item">';
+    html += '<div class="reg-info">';
+    html += '<div class="reg-role">' + escHtml(v.name || '') + '</div>';
+    html += '<div class="reg-name">' + escHtml(v.province || '') + ' ' + escHtml(v.city || '') + '</div>';
+    html += '<div class="reg-phone">负责人: ' + escHtml(v.chief ? v.chief.name : '') + '</div>';
+    html += '</div>';
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function renderAccounts(accounts) {
+  var el = document.getElementById('accountsList');
+  if (accounts.length === 0) {
+    el.innerHTML = '<div class="empty">暂无账号</div>';
+    return;
+  }
+  var html = '<div style="font-size:13px;color:#666;margin-bottom:12px">共 ' + accounts.length + ' 个账号</div>';
+  accounts.forEach(function(a) {
+    html += '<div class="reg-item">';
+    html += '<div class="reg-info">';
+    html += '<div class="reg-role">' + escHtml(a.name || '') + ' <span class="badge">' + escHtml(a.role || '') + '</span></div>';
+    html += '<div class="reg-phone">账号: ' + escHtml(a.phone || '') + '</div>';
+    html += '<div class="reg-phone">村庄: ' + escHtml(a.village || '') + '</div>';
+    html += '</div>';
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+  event.target.classList.add('active');
+  document.getElementById('regsPanel').style.display = tab === 'regs' ? 'block' : 'none';
+  document.getElementById('villagesPanel').style.display = tab === 'villages' ? 'block' : 'none';
+  document.getElementById('accountsPanel').style.display = tab === 'accounts' ? 'block' : 'none';
+}
+
+async function saveData() {
+  ensureData();
+  try {
+    await cloudPatch(TABLE + '?id=eq.' + ROW_ID, { data: cloudData });
+  } catch(e) {
+    console.log('save error:', e);
+  }
+}
+
+async function approveReg(id) {
+  if (!confirm('确定通过此申请？')) return;
+  ensureData();
+  var reg = cloudData.registrations.find(function(r) { return r.id === id; });
+  if (!reg) { alert('未找到该申请'); return; }
+  
+  // 更新状态
+  reg.status = '已通过';
+  reg.approvedAt = Date.now();
+  
+  // 写入对应表
+  if (reg.role === '村主任') {
+    cloudData.villages = cloudData.villages || [];
+    var exists = cloudData.villages.some(function(v) { return v.name === reg.village; });
+    if (!exists) {
+      cloudData.villages.push({
+        id: 'v' + Date.now(),
+        name: reg.village,
+        province: reg.province || '',
+        city: reg.city || '',
+        chief: { name: reg.name, phone: reg.phone },
+        createdAt: Date.now()
+      });
+    }
+  } else {
+    cloudData.accounts = cloudData.accounts || [];
+    var exists2 = cloudData.accounts.some(function(a) { return a.phone === reg.phone; });
+    if (!exists2) {
+      cloudData.accounts.push({
+        id: 'a' + Date.now(),
+        name: reg.name,
+        phone: reg.phone,
+        role: reg.role,
+        village: reg.village || '',
+        createdAt: Date.now()
+      });
+    }
+  }
+  
+  await saveData();
+  renderAll();
+  alert('已通过申请！');
+}
+
+async function rejectReg(id) {
+  if (!confirm('确定拒绝此申请？')) return;
+  ensureData();
+  var reg = cloudData.registrations.find(function(r) { return r.id === id; });
+  if (!reg) { alert('未找到该申请'); return; }
+  reg.status = '已拒绝';
+  reg.rejectedAt = Date.now();
+  await saveData();
+  renderAll();
+  alert('已拒绝');
+}
+
+function escHtml(s) {
+  if (!s) return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+init();
+</script>
+</body>
+</html>
