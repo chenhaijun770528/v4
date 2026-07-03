@@ -1,0 +1,447 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>选择角色 - 村庄平台</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+    }
+    .header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(135deg, #2E7D32, #4CAF50);
+      color: white;
+      padding: 12px 16px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .header-title { font-size: 18px; font-weight: bold; }
+    .container { padding: 64px 16px 40px; max-width: 750px; margin: 0 auto; }
+    .user-info {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .user-avatar { font-size: 40px; }
+    .user-name { font-size: 16px; font-weight: bold; color: #333; }
+    .user-account { font-size: 12px; color: #999; margin-top: 2px; }
+    .current-role-badge {
+      display: inline-block;
+      background: #E8F5E9;
+      color: #2E7D32;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+    .pending-badge {
+      background: #FFF3E0;
+      color: #E65100;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 12px;
+      padding-left: 4px;
+    }
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .role-card {
+      background: white;
+      border-radius: 12px;
+      padding: 16px 8px;
+      text-align: center;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .role-card:active { transform: scale(0.96); }
+    .role-card.selected {
+      border-color: #2E7D32;
+      background: #E8F5E9;
+    }
+    .role-icon { font-size: 36px; display: block; margin-bottom: 6px; }
+    .role-name { font-size: 13px; font-weight: bold; color: #333; }
+    .role-desc { font-size: 11px; color: #999; margin-top: 2px; }
+    .btn-confirm {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #2E7D32, #388E3C);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .btn-confirm:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .my-registrations {
+      margin-top: 24px;
+    }
+    .reg-item {
+      background: white;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .reg-item-left { display: flex; align-items: center; gap: 10px; }
+    .reg-item-icon { font-size: 28px; }
+    .reg-item-name { font-size: 14px; font-weight: bold; color: #333; }
+    .reg-item-time { font-size: 11px; color: #999; margin-top: 2px; }
+    .reg-status {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .status-pending { background: #FFF3E0; color: #E65100; }
+    .status-approved { background: #E8F5E9; color: #2E7D32; }
+    .status-rejected { background: #FFEBEE; color: #C62828; }
+    .empty-state {
+      text-align: center;
+      padding: 30px;
+      color: #bbb;
+      font-size: 14px;
+    }
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-size: 14px;
+      z-index: 9999;
+    }
+    .notice-box {
+      background: #FFF8E1;
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+      font-size: 13px;
+      color: #795548;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span style="width:40px"></span>
+    <span class="header-title">选择身份</span>
+    <span onclick="logout()" style="font-size:13px;cursor:pointer;">退出</span>
+  </div>
+
+  <div class="container">
+    <div class="user-info">
+      <div class="user-avatar">👤</div>
+      <div>
+        <div class="user-name" id="userName">加载中...</div>
+        <div class="user-account" id="userAccount"></div>
+        <div id="currentRoleTag"></div>
+      </div>
+    </div>
+
+    <div class="notice-box" id="noticeBox">
+      请先选择您的身份角色。不同角色有不同的功能和权限。<br>
+      村主任和村民需要经过审核，审核通过后自动生效。
+    </div>
+
+    <div class="section-title">🌟 选择您的身份（当前角色）</div>
+    <div class="role-grid" id="roleGrid"></div>
+
+    <button class="btn-confirm" id="btnConfirm" onclick="confirmRole()">确认选择</button>
+
+    <div class="my-registrations" id="myRegistrations">
+      <div class="section-title">📋 我的注册记录</div>
+      <div id="regList"></div>
+    </div>
+  </div>
+
+  <script>
+    var Storage = {
+      get: function(key, defaultVal) {
+        try {
+          var v = localStorage.getItem('village_' + key);
+          return v ? JSON.parse(v) : defaultVal;
+        } catch(e) { return defaultVal; }
+      },
+      set: function(key, val) {
+        localStorage.setItem('village_' + key, JSON.stringify(val));
+      }
+    };
+
+    var currentUser = Storage.get('user', null);
+    if (!currentUser) {
+      location.href = 'login.html';
+    }
+
+    var selectedRole = currentUser.currentRole !== 'none' ? currentUser.currentRole : null;
+
+    // 角色定义
+    var ROLES = [
+      { id: 'township', icon: '👔', name: '村主任', path: 'register-township.html', needAudit: true, auditText: '需管理员审核', desc: '管理村庄事务' },
+      { id: 'villager', icon: '🏠', name: '村民', path: 'register-villager.html', needAudit: true, auditText: '需村主任审核', desc: '发布农产品等' },
+      { id: 'tourist', icon: '🎒', name: '游客', path: 'register-tourist.html', needAudit: false, auditText: '自动通过', desc: '浏览村庄信息' },
+      { id: 'market', icon: '🏪', name: '超市老板', path: 'register-market.html', needAudit: true, auditText: '需管理员审核', desc: '经营超市业务' },
+      { id: 'construction', icon: '🏗️', name: '建筑公司', path: 'register-construction.html', needAudit: true, auditText: '需管理员审核', desc: '承接建筑工程' },
+      { id: 'teacher', icon: '📚', name: '老师', path: 'register-teacher.html', needAudit: true, auditText: '需管理员审核', desc: '教育资源' },
+      { id: 'student', icon: '🎓', name: '大学生', path: 'register-student.html', needAudit: true, auditText: '需管理员审核', desc: '社会实践' },
+      { id: 'lawyer', icon: '⚖️', name: '律师', path: 'register-lawyer.html', needAudit: true, auditText: '需管理员审核', desc: '法律服务' },
+      { id: 'truck', icon: '🚛', name: '货运司机', path: 'register-truck.html', needAudit: true, auditText: '需管理员审核', desc: '货物运输' },
+      { id: 'carpool', icon: '🚗', name: '顺风车', path: 'register-carpool.html', needAudit: true, auditText: '需管理员审核', desc: '出行拼车' },
+      { id: 'massage', icon: '💆', name: '按摩技师', path: 'register-massage.html', needAudit: true, auditText: '需管理员审核', desc: '按摩服务' },
+      { id: 'landscape', icon: '🌿', name: '建筑园林设计师', path: 'register-landscape.html', needAudit: true, auditText: '需管理员审核', desc: '园林景观设计' }
+    ];
+
+    function toast(msg) {
+      var el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(function() { el.remove(); }, 2000);
+    }
+
+    function logout() {
+      if (!confirm('确定要退出登录吗？')) return;
+      Storage.set('user', null);
+      location.href = 'login.html';
+    }
+
+    function renderUserInfo() {
+      document.getElementById('userName').textContent = currentUser.account;
+      document.getElementById('userAccount').textContent = '账号：' + currentUser.account;
+
+      var tag = document.getElementById('currentRoleTag');
+      if (currentUser.currentRole && currentUser.currentRole !== 'none') {
+        var role = ROLES.find(function(r) { return r.id === currentUser.currentRole; });
+        var roleName = role ? role.name : currentUser.currentRole;
+        tag.innerHTML = '<span class="current-role-badge">当前：' + roleName + '</span>';
+      } else {
+        tag.innerHTML = '<span class="current-role-badge pending-badge">未选择角色</span>';
+      }
+    }
+
+    function renderRoles() {
+      var grid = document.getElementById('roleGrid');
+      var html = '';
+      for (var i = 0; i < ROLES.length; i++) {
+        var r = ROLES[i];
+        var sel = selectedRole === r.id ? ' selected' : '';
+        html += '<div class="role-card' + sel + '" onclick="selectRole(\'' + r.id + '\')" id="role_' + r.id + '">' +
+          '<span class="role-icon">' + r.icon + '</span>' +
+          '<div class="role-name">' + r.name + '</div>' +
+          '<div class="role-desc">' + r.auditText + '</div>' +
+          '</div>';
+      }
+      grid.innerHTML = html;
+      updateBtn();
+    }
+
+    function selectRole(roleId) {
+      selectedRole = roleId;
+      // 更新UI
+      var cards = document.querySelectorAll('.role-card');
+      for (var i = 0; i < cards.length; i++) cards[i].classList.remove('selected');
+      var el = document.getElementById('role_' + roleId);
+      if (el) el.classList.add('selected');
+      updateBtn();
+    }
+
+    function updateBtn() {
+      var btn = document.getElementById('btnConfirm');
+      if (!selectedRole) {
+        btn.disabled = true;
+        btn.textContent = '请先选择一个角色';
+      } else {
+        btn.disabled = false;
+        var role = ROLES.find(function(r) { return r.id === selectedRole; });
+        btn.textContent = '注册成为「' + role.name + '」';
+      }
+    }
+
+    function confirmRole() {
+      if (!selectedRole) return;
+      var role = ROLES.find(function(r) { return r.id === selectedRole; });
+
+      // 检查该角色是否已有待审核或已通过的注册
+      var regs = Storage.get('registrations', []);
+      var existing = null;
+      for (var i = 0; i < regs.length; i++) {
+        if (regs[i].accountId === currentUser.id && regs[i].role === role.name) {
+          existing = regs[i];
+          break;
+        }
+      }
+
+      if (existing) {
+        if (existing.status === '待审核') {
+          toast('该角色已在审核中，请等待');
+        } else if (existing.status === '已通过') {
+          toast('您已是「' + role.name + '」，无需重复注册');
+        } else if (existing.status === '已拒绝') {
+          toast('该角色申请已被拒绝，请联系管理员');
+        }
+        return;
+      }
+
+      // 跳转到对应角色注册页
+      location.href = role.path;
+    }
+
+    function renderMyRegistrations() {
+      var list = document.getElementById('regList');
+      var regs = Storage.get('registrations', []);
+      var myRegs = [];
+      for (var i = 0; i < regs.length; i++) {
+        if (regs[i].accountId === currentUser.id) {
+          myRegs.push(regs[i]);
+        }
+      }
+
+      if (myRegs.length === 0) {
+        list.innerHTML = '<div class="empty-state">暂无注册记录</div>';
+        return;
+      }
+
+      var html = '';
+      for (var j = 0; j < myRegs.length; j++) {
+        var r = myRegs[j];
+        var role = ROLES.find(function(ro) { return ro.name === r.role; });
+        var icon = role ? role.icon : '👤';
+        var statusCls = 'status-pending';
+        var statusText = '待审核';
+        if (r.status === '已通过') { statusCls = 'status-approved'; statusText = '已通过'; }
+        if (r.status === '已拒绝') { statusCls = 'status-rejected'; statusText = '已拒绝'; }
+        var timeStr = r.applyTime ? new Date(r.applyTime).toLocaleDateString('zh-CN') : '';
+
+        html += '<div class="reg-item">' +
+          '<div class="reg-item-left">' +
+          '<span class="reg-item-icon">' + icon + '</span>' +
+          '<div>' +
+          '<div class="reg-item-name">' + r.role + (r.name ? ' - ' + r.name : '') + '</div>' +
+          '<div class="reg-item-time">' + timeStr + '</div>' +
+          '</div>' +
+          '</div>' +
+          '<span class="reg-status ' + statusCls + '">' + statusText + '</span>' +
+          '</div>';
+      }
+      list.innerHTML = html;
+    }
+
+    // 页面加载时：监听从注册页返回的事件（localStorage标识）
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'village_registrations') {
+        // 注册表变化了，刷新列表
+        var regs = JSON.parse(e.newValue || '[]');
+        var myRegs = [];
+        for (var i = 0; i < regs.length; i++) {
+          if (regs[i].accountId === currentUser.id) myRegs.push(regs[i]);
+        }
+        if (myRegs.length > 0) {
+          var latest = myRegs[0];
+          if (latest.status === '已通过') {
+            // 审核通过，更新账号当前角色并跳转
+            currentUser.currentRole = getRoleIdByName(latest.role);
+            currentUser.currentRoleId = latest.id;
+            Storage.set('user', currentUser);
+            // 更新accounts
+            var accounts = Storage.get('accounts', []);
+            for (var j = 0; j < accounts.length; j++) {
+              if (accounts[j].id === currentUser.id) {
+                accounts[j].currentRole = currentUser.currentRole;
+                accounts[j].currentRoleId = latest.id;
+                break;
+              }
+            }
+            Storage.set('accounts', accounts);
+            toast('审核通过！');
+            setTimeout(function() { location.href = 'index.html'; }, 1500);
+          }
+        }
+        renderMyRegistrations();
+      }
+    });
+
+    function getRoleIdByName(name) {
+      for (var i = 0; i < ROLES.length; i++) {
+        if (ROLES[i].name === name) return ROLES[i].id;
+      }
+      return 'tourist';
+    }
+
+    // 初始化
+    renderUserInfo();
+    checkApprovedRoles(); // 检查是否有已通过的注册
+    renderRoles();
+    renderMyRegistrations();
+    updateBtn();
+
+    // 页面加载时：检查是否有已通过的注册（管理员/村主任刚审核完）
+    function checkApprovedRoles() {
+      var regs = Storage.get('registrations', []);
+      var myApproved = null;
+      for (var i = 0; i < regs.length; i++) {
+        if (regs[i].accountId === currentUser.id && regs[i].status === '已通过') {
+          myApproved = regs[i];
+          break;
+        }
+      }
+
+      if (myApproved && (!currentUser.currentRole || currentUser.currentRole === 'none')) {
+        // 自动开通角色
+        var roleId = getRoleIdByName(myApproved.role);
+        currentUser.currentRole = roleId;
+        currentUser.currentRoleId = myApproved.id;
+        currentUser.currentRoleName = myApproved.name;
+        Storage.set('user', currentUser);
+
+        // 更新账号列表
+        var accounts = Storage.get('accounts', []);
+        for (var j = 0; j < accounts.length; j++) {
+          if (accounts[j].id === currentUser.id) {
+            accounts[j].currentRole = roleId;
+            accounts[j].currentRoleId = myApproved.id;
+            accounts[j].currentRoleName = myApproved.name;
+            break;
+          }
+        }
+        Storage.set('accounts', accounts);
+
+        toast('「' + myApproved.role + '」审核已通过，角色已开通！');
+        setTimeout(function() { location.href = 'index.html'; }, 1500);
+      }
+    }
+  </script>
+</body>
+</html>
