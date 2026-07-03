@@ -480,7 +480,7 @@ const DB = {
         { id: 's8', title: '竹林氧吧', desc: '百亩竹林，呼吸自然', img: 'https://picsum.photos/seed/scene8/400/300' }
       ],
       food: [
-        { id: 'f6', name: '竹林土鸡', price: '108', unit: '只', desc: '竹林散养，营养丰富', img: 'https://picsum.photos/seed/food6/400/300' },
+        { id: 'f6', name: '竹林土鸡', price: '108', unit: '只', desc: '竹林散养，营养���富', img: 'https://picsum.photos/seed/food6/400/300' },
         { id: 'f7', name: '手工竹笋干', price: '45', unit: '斤', desc: '春季竹笋，自然晾晒', img: 'https://picsum.photos/seed/food7/400/300' }
       ],
       images: ['https://picsum.photos/seed/v3a/400/300', 'https://picsum.photos/seed/v3b/400/300', 'https://picsum.photos/seed/v3c/400/300']
@@ -617,16 +617,10 @@ function logout() {
         document.getElementById('regForm').reset();
         if (btn) { btn.disabled = false; btn.textContent = '提交'; }
         setTimeout(function() { location.href = 'index.html'; }, 1500);
-    var btn = document.querySelector('button[onclick="submit()"]');
-    if (btn) { btn.disabled = true; btn.textContent = '已提交'; }
-    alert('申请成功！等待管理员审核。');
-    setTimeout(function() { location.href = 'index.html'; }, 2000);
-  })
-  .catch(function(err) {
-    var btn = document.querySelector('button[onclick="submit()"]');
-    if (btn) { btn.disabled = false; btn.textContent = '重新提交'; }
-    alert('提交失败，请检查网络后重试。');
-  });
+      }).catch(function(err) {
+        alert('提交失败: ' + (err.msg || JSON.stringify(err)));
+        if (btn) { btn.disabled = false; btn.textContent = '提交'; }
+      });
     }
   </script>
 </body>
