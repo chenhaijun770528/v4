@@ -199,7 +199,7 @@
       var name = document.getElementById('name').value.trim();
       var phone = document.getElementById('phone').value.trim();
       if (!name) { alert('请输入姓名'); return; }
-      if (!phone || !/^1\d{10}$/.test(phone)) { alert('请输入正确的手机号'); return; }
+      if (!phone || !/^1\d{10}$/.test(phone)) { alert('请���入正确的手机号'); return; }
       var btn = document.querySelector('button[onclick="submitTourist()"]');
       if (btn) { btn.disabled = true; btn.textContent = '提交中...'; }
       var regData = {
