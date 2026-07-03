@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>后台管理</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;font-size:14px;}
+.header{background:#37474F;color:#fff;padding:12px 16px;font-size:18px;font-weight:bold;text-align:center;position:fixed;top:0;left:0;right:0;z-index:100;}
+.header-back{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:18px;cursor:pointer;}
+.header-action{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:18px;cursor:pointer;}
+.container{padding:60px 16px 20px;max-width:600px;margin:0 auto;}
+.card{background:#fff;border-radius:12px;padding:20px;margin:20px 0;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+input[type="text"],input[type="password"],textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #ddd;border-radius:6px;font-size:14px;outline:none;}
+input[type="text"]:focus,input[type="password"]:focus,textarea:focus{border-color:#37474F;}
+button{width:100%;padding:12px;background:#37474F;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;margin-top:10px;}
+button.btn-ok{background:#4CAF50;}
+button.btn-no{background:#F44336;}
+.tab{display:flex;background:#fff;border-radius:8px;overflow:hidden;margin:10px 0;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+.tab-item{flex:1;text-align:center;padding:10px;cursor:pointer;font-size:13px;}
+.tab-item.active{background:#37474F;color:#fff;}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;margin-left:5px;}
+.badge-w{background:#FF9800;color:#fff;}
+.badge-g{background:#4CAF50;color:#fff;}
+.badge-r{background:#F44336;color:#fff;}
+.cloud-status{text-align:center;padding:8px;font-size:12px;color:#666;}
+.cloud-on{color:#4CAF50;font-weight:bold;}
+.cloud-off{color:#999;}
+.village-list{margin:8px 0;padding:8px;background:#f9f9f9;border-radius:6px;max-height:150px;overflow-y:auto;}
+.village-list label{display:block;padding:4px 0;font-size:14px;}
+.empty{text-align:center;color:#999;padding:20px;}
+.announce-item{padding:10px;border-bottom:1px solid #eee;}
+.announce-item:last-child{border-bottom:none;}
+.announce-title{font-weight:bold;color:#37474F;}
+.announce-text{margin:4px 0;font-size:13px;}
+.announce-meta{font-size:11px;color:#999;}
+</style>
+</head>
+<body>
+<div class="header">
+  <span class="header-back" onclick="if(history.length>1)history.back();else location.href='index.html'">←</span>
+  ⚙️ 后台管理
+  <span class="header-action" onclick="showSettings()">⚙</span>
+</div>
+<div class="container" id="app"></div>
+
+<script>
+// ====== 本地存储 ======
+var S = {
+  get: function(k, def) { try { var v = localStorage.getItem('village_' + k); return v ? JSON.parse(v) : def; } catch(e) { return def; } },
+  set: function(k, v) { try { localStorage.setItem('village_' + k, JSON.stringify(v)); return true; } catch(e) { return false; } }
+};
+
+// ====== 云端同步 ======
+var SUPABASE_URL = 'https://eivqbbxyllsorbvgqsju.supabase.co';
+var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpdnFiYnh5bGxzb3Jidmdxc2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MTIzMDksImV4cCI6MjA5ODI4ODMwOX0.QeKnbo1cgA0yGMOEydML3PNXatH1V1QXfW0hyxRy7KY';
+var TABLE = 'village_data';
+var ROW_ID = 'init';
+
+var isCloudConnected = false;
+var cloudData = { registrations: [], villages: [], announcements: [] };
+
+function loadFromCloud(callback) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', SUPABASE_URL + '/rest/v1/' + TABLE + '?id=eq.' + ROW_ID + '&select=data', true);
+  xhr.setRequestHeader('apikey', SUPABASE_KEY);
+  xhr.setRequestHeader('Authorization', 'Bearer ' + SUPABASE_KEY);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4) {
+      if (xhr.status === 200) {
+        try {
+          var arr = JSON.parse(xhr.responseText);
+          if (arr.length > 0 && arr[0].data) {
+            cloudData = arr[0].data;
+            isCloudConnected = true;
+          }
+        } catch(e) {}
+      }
+      callback();
+    }
+  };
+  xhr.timeout = 8000;
+  xhr.ontimeout = function() { callback(); };
+  xhr.onerror = function() { callback(); };
+  xhr.send();
+}
+
+function saveToCloud(callback) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('PATCH', SUPABASE_URL + '/rest/v1/' + TABLE + '?id=eq.' + ROW_ID, true);
+  xhr.setRequestHeader('apikey', SUPABASE_KEY);
+  xhr.setRequestHeader('Authorization', 'Bearer ' + SUPABASE_KEY);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4 && callback) callback(xhr.status === 200 || xhr.status === 204);
+  };
+  xhr.onerror = function() { if (callback) callback(false); };
+  xhr.send(JSON.stringify({ data: cloudData }));
+}
+
+// ====== 管理员账号 ======
+var ADMIN_USER = S.get('admin_user', 'admin');
+var ADMIN_PWD = S.get('admin_pwd', 'admin123');
+var isLogin = sessionStorage.getItem('village_admin_logged') === 'true';
+var curTab = 'chiefs';
+
+// ====== 渲染登录页 ======
+function renderLogin() {
+  document.getElementById('app').innerHTML = 
+    '<div class="card">' +
+      '<h2 style="text-align:center;color:#37474F;">🔐 管理员登录</h2>' +
+      '<input type="text" id="user" placeholder="账号" value="' + ADMIN_USER + '">' +
+      '<input type="password" id="pwd" placeholder="密码">' +
+      '<button onclick="doLogin()">登录</button>' +
+    '</div>';
+}
+
+window.doLogin = function() {
+  var u = document.getElementById('user').value.trim();
+  var p = document.getElementById('pwd').value.trim();
+  if (!u || !p) { alert('请输入账号和密码'); return; }
+  // 先从云端加载数据
+  loadFromCloud(function() {
+    // 方式1: 从云端账号验证
+    var accounts = cloudData.accounts || [];
+    var found = accounts.find(function(a) {
+      return (a.username === u || a.id === u || a.phone === u) && a.password === p && a.role === '管理员';
+    });
+    // 方式2: 备选兼容本地账号
+    if (!found && u === ADMIN_USER && p === ADMIN_PWD) {
+      found = true;
+    }
+    if (found) {
+      isLogin = true;
+      sessionStorage.setItem('village_admin_logged', 'true');
+      renderAdmin();
+    } else {
+      alert('账号或密码错误\n\n提示：admin / admin123');
+    }
+  });
+};
+
+// ====== 渲染管理界面 ======
+function renderAdmin() {
+  // 合并云端 + 本地数据
+  var localRegs = S.get('registrations', []);
+  var localVillages = S.get('villages', []);
+  var localAnnounce = S.get('announcements', []);
+  
+  // 使用云端数据（优先），或本地数据
+  var regs = (cloudData.registrations && cloudData.registrations.length) ? cloudData.registrations : localRegs;
+  var villages = (cloudData.villages && cloudData.villages.length) ? cloudData.villages : localVillages;
+  var announce = (cloudData.announcements && cloudData.announcements.length) ? cloudData.announcements : localAnnounce;
+  
+  var html = '';
+  html += '<div class="cloud-status">';
+  if (isCloudConnected) {
+    html += '<span class="cloud-on">☁️ 云端已连接</span>';
+  } else {
+    html += '<span class="cloud-off">☁️ 仅本地数据</span>';
+  }
+  html += '</div>';
+  
+  html += '<div class="tab">';
+  html += '<div class="tab-item' + (curTab==='chiefs'?' active':'') + '" onclick="switchTab(\'chiefs\')">村主任</div>';
+  html += '<div class="tab-item' + (curTab==='roles'?' active':'') + '" onclick="switchTab(\'roles\')">其他角色</div>';
+  html += '<div class="tab-item' + (curTab==='villages'?' active':'') + '" onclick="switchTab(\'villages\')">村庄</div>';
+  html += '<div class="tab-item' + (curTab==='announce'?' active':'') + '" onclick="switchTab(\'announce\')">公告</div>';
+  html += '</div>';
+  
+  if (curTab === 'chiefs') {
+    var chiefs = regs.filter(function(r) { return (r.role || r.type) === '村主任'; });
+    if (!chiefs.length) { html += '<div class="card"><div class="empty">暂无村主任申请</div></div>'; }
+    else {
+      chiefs.forEach(function(r) {
+        html += renderCard(r);
+      });
+    }
+  } else if (curTab === 'roles') {
+    var others = regs.filter(function(r) { return (r.role || r.type) !== '村主任' && r.role !== '管理员' && r.role !== '游客'; });
+    if (!others.length) { html += '<div class="card"><div class="empty">暂无其他角色申请</div></div>'; }
+    else {
+      others.forEach(function(r) {
+        html += renderCard(r);
+      });
+    }
+  } else if (curTab === 'villages') {
+    if (!villages.length) { html += '<div class="card"><div class="empty">暂无村庄</div></div>'; }
+    else {
+      html += '<div class="card">';
+      villages.forEach(function(v) {
+        var vid = (v.id || v.name || '').replace(/'/g, "\\'");
+        html += '<div class="announce-item"><div class="announce-title">' + esc(v.name || '?') + '</div><div class="announce-text">村长:' + esc(v.chiefName || '?') + ' | 电话:' + esc(v.phone || '?') + '</div>';
+        html += '<button class="btn-no" style="margin-top:6px;padding:6px;font-size:12px;" onclick="deleteVillage(\'' + vid + '\')">🗑️ 删除村庄</button></div>';
+      });
+      html += '</div>';
+    }
+  } else if (curTab === 'announce') {
+    html += '<div class="card">';
+    html += '<h3 style="color:#37474F;margin-bottom:10px;">📢 发布公告</h3>';
+    html += '<input type="text" id="announceTitle" placeholder="公告标题">';
+    html += '<textarea id="announceContent" placeholder="公告内容" rows="3"></textarea>';
+    html += '<p style="font-size:12px;color:#666;margin:8px 0 4px;">发布到村庄（不选则全平台显示）</p>';
+    if (villages.length) {
+      html += '<div class="village-list">';
+      villages.forEach(function(v) {
+        html += '<label><input type="checkbox" class="village-cb" value="' + esc(v.name) + '"> ' + esc(v.name) + '</label>';
+      });
+      html += '</div>';
+    } else {
+      html += '<div class="empty" style="padding:10px;">暂无村庄</div>';
+    }
+    html += '<button onclick="saveAnnounce()">发布</button>';
+    html += '</div>';
+    
+    if (announce.length) {
+      html += '<div class="card"><h3 style="color:#37474F;margin-bottom:10px;">已有公告</h3>';
+      announce.forEach(function(a) {
+        var villStr = (a.villages && a.villages.length) ? ' | 村庄:' + a.villages.join('、') : ' | 全平台';
+        html += '<div class="announce-item">' +
+          '<div class="announce-title">' + esc(a.title || '无标题') + '</div>' +
+          '<div class="announce-text">' + esc(a.text || a.content || '') + '</div>' +
+          '<div class="announce-meta">' + esc(a.time || '') + villStr + '</div>' +
+          '<button class="btn-no" style="margin-top:6px;padding:6px;" onclick="deleteAnnounce(\'' + a.id + '\')">删除</button>' +
+        '</div>';
+      });
+      html += '</div>';
+    }
+  }
+  
+  document.getElementById('app').innerHTML = html;
+}
+
+function renderCard(r) {
+  var name = esc(r.name || r.chiefName || r.username || '?');
+  var role = esc(r.role || r.type || '?');
+  var village = esc(r.village || '');
+  var phone = esc(r.phone || r.tel || '');
+  var time = esc(r.createdAt || r.time || '');
+  var badge = r.status === '待审核' ? '<span class="badge badge-w">待审核</span>' :
+              r.status === '已通过' ? '<span class="badge badge-g">已通过</span>' :
+              '<span class="badge badge-r">已拒绝</span>';
+  
+  var html = '<div class="card">' +
+    '<div style="font-weight:bold;">' + name + ' ' + badge + '</div>' +
+    '<div style="color:#666;font-size:13px;margin:4px 0;">角色:' + role;
+  if (village) html += ' | 村庄:' + village;
+  if (phone) html += ' | ' + phone;
+  if (time) html += ' | ' + time;
+  html += '</div>';
+  
+  if (r.status === '待审核') {
+    html += '<div style="display:flex;gap:8px;margin-top:8px;">';
+    html += '<button class="btn-ok" style="flex:1;margin:0;" onclick="doApprove(\'' + (r.id||'') + '\')">通过</button>';
+    html += '<button class="btn-no" style="flex:1;margin:0;" onclick="doReject(\'' + (r.id||'') + '\')">拒绝</button>';
+    html += '</div>';
+  }
+  // 任何状态都有"删除记录"按钮
+  html += '<div style="display:flex;gap:8px;margin-top:6px;">';
+  html += '<button class="btn-no" style="flex:1;margin:0;padding:6px;font-size:12px;" onclick="deleteRegistration(\'' + (r.id||'') + '\')">🗑️ 删除记录</button>';
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
+function esc(s) { if (s == null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+window.switchTab = function(tab) { curTab = tab; renderAdmin(); };
+
+window.doApprove = function(id) {
+  if (!id) return;
+  var updated = false;
+  if (cloudData.registrations) {
+    for (var i = 0; i < cloudData.registrations.length; i++) {
+      if (cloudData.registrations[i].id == id) {
+        cloudData.registrations[i].status = '已通过';
+        // 同步到村庄
+        if ((cloudData.registrations[i].role || cloudData.registrations[i].type) === '村主任') {
+          if (!cloudData.villages) cloudData.villages = [];
+          var village = cloudData.registrations[i].village;
+          var exists = false;
+          for (var j = 0; j < cloudData.villages.length; j++) {
+            if (cloudData.villages[j].name === village) { exists = true; break; }
+          }
+          if (!exists) {
+            cloudData.villages.push({
+              id: cloudData.registrations[i].id,
+              name: village,
+              chiefName: cloudData.registrations[i].name,
+              phone: cloudData.registrations[i].phone,
+              status: '已通过'
+            });
+          }
+        }
+        updated = true; break;
+      }
+    }
+  }
+  if (!updated) {
+    var localRegs = S.get('registrations', []);
+    for (var k = 0; k < localRegs.length; k++) {
+      if (localRegs[k].id == id) { localRegs[k].status = '已通过'; S.set('registrations', localRegs); break; }
+    }
+  } else {
+    S.set('registrations', cloudData.registrations);
+    if (cloudData.villages) S.set('villages', cloudData.villages);
+    saveToCloud();
+  }
+  renderAdmin();
+  alert('已通过');
+};
+
+window.doReject = function(id) {
+  if (!id) return;
+  if (cloudData.registrations) {
+    for (var i = 0; i < cloudData.registrations.length; i++) {
+      if (cloudData.registrations[i].id == id) { cloudData.registrations[i].status = '已拒绝'; break; }
+    }
+    S.set('registrations', cloudData.registrations);
+    saveToCloud();
+  } else {
+    var localRegs = S.get('registrations', []);
+    for (var k = 0; k < localRegs.length; k++) {
+      if (localRegs[k].id == id) { localRegs[k].status = '已拒绝'; break; }
+    }
+    S.set('registrations', localRegs);
+  }
+  renderAdmin();
+  alert('已拒绝');
+};
+
+window.saveAnnounce = function() {
+  var title = document.getElementById('announceTitle').value.trim();
+  var content = document.getElementById('announceContent').value.trim();
+  if (!title || !content) { alert('请填写标题和内容'); return; }
+  
+  var checked = document.querySelectorAll('.village-cb:checked');
+  var selectedVillages = [];
+  for (var i = 0; i < checked.length; i++) selectedVillages.push(checked[i].value);
+  
+  var newAnnounce = {
+    id: 'a_' + Date.now(),
+    title: title,
+    text: content,
+    villages: selectedVillages,
+    time: new Date().toLocaleString('zh-CN'),
+    createdAt: Date.now()
+  };
+  
+  if (cloudData.announcements) {
+    cloudData.announcements.unshift(newAnnounce);
+    S.set('announcements', cloudData.announcements);
+    saveToCloud();
+  } else {
+    var local = S.get('announcements', []);
+    local.unshift(newAnnounce);
+    S.set('announcements', local);
+  }
+  renderAdmin();
+  alert('公告已发布');
+};
+
+window.deleteAnnounce = function(id) {
+  if (!confirm('确定删除？')) return;
+  if (cloudData.announcements) {
+    cloudData.announcements = cloudData.announcements.filter(function(a) { return a.id !== id; });
+    S.set('announcements', cloudData.announcements);
+    saveToCloud();
+  } else {
+    var local = S.get('announcements', []);
+    local = local.filter(function(a) { return a.id !== id; });
+    S.set('announcements', local);
+  }
+  renderAdmin();
+};
+
+window.deleteRegistration = function(id) {
+  if (!id) return;
+  if (!confirm('确定删除此角色记录？此操作不可恢复！')) return;
+  if (cloudData.registrations) {
+    cloudData.registrations = cloudData.registrations.filter(function(r) { return String(r.id) !== String(id); });
+    S.set('registrations', cloudData.registrations);
+    saveToCloud();
+  } else {
+    var local = S.get('registrations', []);
+    local = local.filter(function(r) { return String(r.id) !== String(id); });
+    S.set('registrations', local);
+  }
+  renderAdmin();
+  alert('已删除角色记录');
+};
+
+window.deleteVillage = function(idOrName) {
+  if (!confirm('确定删除此村庄？此操作不可恢复！')) return;
+  var success = false;
+  if (cloudData.villages) {
+    var newList = [];
+    for (var i = 0; i < cloudData.villages.length; i++) {
+      if (String(cloudData.villages[i].id || cloudData.villages[i].name) !== String(idOrName)) {
+        newList.push(cloudData.villages[i]);
+      } else {
+        success = true;
+      }
+    }
+    cloudData.villages = newList;
+    S.set('villages', cloudData.villages);
+    if (success) saveToCloud();
+  } else {
+    var local = S.get('villages', []);
+    local = local.filter(function(v) { return String(v.id || v.name) !== String(idOrName); });
+    S.set('villages', local);
+    success = true;
+  }
+  renderAdmin();
+  if (success) alert('已删除村庄');
+};
+
+window.showSettings = function() {
+  var newUser = prompt('新账号（留空不改）:', '');
+  if (newUser === null) return;
+  var newPwd = prompt('新密码（留空不改）:', '');
+  if (newPwd === null) return;
+  
+  if (newUser) { S.set('admin_user', newUser); ADMIN_USER = newUser; }
+  if (newPwd) { S.set('admin_pwd', newPwd); ADMIN_PWD = newPwd; }
+  alert('已保存');
+};
+
+if (isLogin) { loadFromCloud(function() { renderAdmin(); }); } else { renderLogin(); }
+</script>
+</body>
+</html>
