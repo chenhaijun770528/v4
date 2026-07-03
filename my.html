@@ -9,7 +9,8 @@
 body { font-family: -apple-system, sans-serif; background: #f5f5f5; color: #333; }
 .header { background: linear-gradient(135deg, #2E7D32, #4CAF50); color: white; padding: 30px 16px; text-align: center; }
 .avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); font-size: 36px; line-height: 70px; background: rgba(255,255,255,0.2); margin: 0 auto 10px; }
-.nickname { font-size: 18px; font-weight: bold; }
+.nickname { font-size: 18px; font-weight: bold; word-break: break-all; padding: 0 10px; }
+.account-id { font-size: 12px; opacity: 0.85; margin-top: 6px; word-break: break-all; padding: 0 10px; }
 .role-badge { display: inline-block; background: rgba(255,255,255,0.25); padding: 6px 14px; border-radius: 14px; font-size: 13px; margin-top: 10px; }
 .container { padding: 16px; }
 .card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
@@ -20,18 +21,22 @@ body { font-family: -apple-system, sans-serif; background: #f5f5f5; color: #333;
 .menu-arrow { color: #ccc; font-size: 20px; }
 .btn { background: #2E7D32; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 15px; width: 100%; cursor: pointer; margin: 8px 0; }
 .btn:hover { background: #1B5E20; }
+.btn-secondary { background: #FF9800; }
+.btn-secondary:hover { background: #F57C00; }
 .status { padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; line-height: 1.6; word-break: break-all; }
 .status-ok { background: #E8F5E9; color: #2E7D32; }
 .status-err { background: #FFEBEE; color: #F44336; }
 .status-info { background: #E3F2FD; color: #1976D2; }
 .status-warn { background: #FFF3E0; color: #E65100; }
 h3 { font-size: 14px; color: #666; margin-bottom: 10px; font-weight: normal; }
+.debug { background: #f5f5f5; padding: 10px; border-radius: 6px; font-size: 11px; color: #666; font-family: monospace; white-space: pre-wrap; word-break: break-all; max-height: 200px; overflow-y: auto; }
 </style>
 </head>
 <body>
 <div class="header">
   <div class="avatar">&#128100;</div>
   <div class="nickname" id="nickname">加载中...</div>
+  <div class="account-id" id="accountId"></div>
   <div class="role-badge" id="roleBadge">&#10068; 未选择角色</div>
 </div>
 <div class="container">
@@ -39,6 +44,8 @@ h3 { font-size: 14px; color: #666; margin-bottom: 10px; font-weight: normal; }
     <h3>云端同步</h3>
     <div id="status" class="status status-info">准备同步...</div>
     <button class="btn" onclick="doSync()">&#128260; 重新同步云端角色</button>
+    <button class="btn btn-secondary" onclick="showDebug()">&#128269; 显示 localStorage 调试</button>
+    <div id="debugArea" style="display:none" class="debug"></div>
   </div>
   <div class="card">
     <div class="menu-item" onclick="location.href='select-role.html'">
@@ -65,11 +72,12 @@ var roleNameMap = {'村主任':'township','村民':'villager','游客':'tourist'
 var roleNameMapRev = {'township':'村主任','villager':'村民','tourist':'游客','market':'超市老板','construction':'建筑公司','landscape':'园林设计师','teacher':'乡村教师','student':'大学生','lawyer':'律师','truck':'货运司机','carpool':'顺风车','massage':'按摩技师'};
 
 function getUser() {
-  var keys = ['village_user', 'village_current_user', 'user'];
+  // 按优先级查找用户
+  var keys = ['village_user', 'village_current_user', 'user', 'village_account'];
   for (var i = 0; i < keys.length; i++) {
     try {
       var u = JSON.parse(localStorage.getItem(keys[i]) || 'null');
-      if (u && (u.username || u.id || u.phone || u.name)) return u;
+      if (u && typeof u === 'object') return { user: u, key: keys[i] };
     } catch(e) {}
   }
   return null;
@@ -81,14 +89,20 @@ function setUser(u) {
   localStorage.setItem('user', JSON.stringify(u));
 }
 
-function updateUI(u) {
-  document.getElementById('nickname').textContent = u.username || u.id || u.name || '用户';
-}
-
-function setRoleBadge(text, isPending) {
-  var el = document.getElementById('roleBadge');
-  el.innerHTML = text;
-  el.className = 'role-badge' + (isPending ? '' : '');
+function updateUI(result) {
+  var u = result.user;
+  // 智能选择显示名
+  var displayName = u.username || u.name || u.nickName || u.id || '用户';
+  document.getElementById('nickname').textContent = displayName;
+  // 显示账号 ID
+  var accountId = u.account || u.id || '?';
+  if (u.username && u.account && u.username !== u.account) {
+    document.getElementById('accountId').textContent = '账号: ' + u.account;
+  } else if (u.account) {
+    document.getElementById('accountId').textContent = '账号ID: ' + u.account;
+  } else {
+    document.getElementById('accountId').textContent = '';
+  }
 }
 
 function setStatus(msg, type) {
@@ -97,10 +111,39 @@ function setStatus(msg, type) {
   el.innerHTML = msg;
 }
 
+function setRoleBadge(text) {
+  document.getElementById('roleBadge').innerHTML = text;
+}
+
+function showDebug() {
+  var area = document.getElementById('debugArea');
+  if (area.style.display === 'none') {
+    var info = '=== localStorage 全部数据 ===
+
+';
+    var allKeys = Object.keys(localStorage).sort();
+    for (var i = 0; i < allKeys.length; i++) {
+      var k = allKeys[i];
+      var v = localStorage.getItem(k);
+      if (v.length > 500) v = v.substring(0, 500) + '... (截断)';
+      info += '[' + k + ']:
+' + v + '
+
+';
+    }
+    area.textContent = info;
+    area.style.display = 'block';
+  } else {
+    area.style.display = 'none';
+  }
+}
+
 function doSync() {
-  var u = getUser();
-  if (!u) { setStatus('&#10060; 未登录，请先登录', 'err'); return; }
-  setStatus('&#23F3; 正在从云端获取数据...', 'info');
+  var result = getUser();
+  if (!result) { setStatus('&#10060; 未登录', 'err'); return; }
+  var u = result.user;
+  setStatus('&#23F3; 正在从云端获取数据...<br>当前账号: <b>' + (u.account || u.id || '?') + '</b>', 'info');
+  
   fetch(SUPABASE_URL + '/rest/v1/village_data?id=eq.init&select=data', {
     headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
   })
@@ -110,32 +153,34 @@ function doSync() {
     var data = rows[0].data;
     var accounts = data.accounts || [];
     var regs = data.registrations || [];
+    
     var myInfo = null;
     var pendingReg = null;
     
-    // 1. 在 accounts 里找已批准的角色
+    // 1. 在 accounts 里找（按 account / id / username 匹配）
     for (var i = 0; i < accounts.length; i++) {
       var a = accounts[i];
-      if (a.phone === u.phone || a.id === u.id || a.username === u.username || a.id === u.username || a.username === u.id) {
+      if (a.account === u.account || a.id === u.id || a.username === u.username || 
+          a.account === u.id || a.id === u.account || a.username === u.account) {
         myInfo = a; break;
       }
     }
     
-    // 2. 在 registrations 里找已通过的申请
+    // 2. 在 registrations 里找已通过的
     if (!myInfo) {
       for (var j = 0; j < regs.length; j++) {
         var r = regs[j];
-        if ((r.phone === u.phone || r.account === u.account || r.account === u.username || r.account === u.id) && r.status === '已通过') {
+        if ((r.account === u.account || r.accountId === u.id || r.phone === u.phone) && r.status === '已通过') {
           myInfo = { role: r.role, name: r.name }; break;
         }
       }
     }
     
-    // 3. 在 registrations 里找待审核的申请 *** 这是新增的！ ***
+    // 3. 在 registrations 里找待审核的
     if (!myInfo) {
       for (var k = 0; k < regs.length; k++) {
         var r2 = regs[k];
-        if ((r2.phone === u.phone || r2.account === u.account || r2.account === u.username || r2.account === u.id) && r2.status === '待审核') {
+        if ((r2.account === u.account || r2.accountId === u.id || r2.phone === u.phone) && r2.status === '待审核') {
           pendingReg = r2; break;
         }
       }
@@ -145,19 +190,14 @@ function doSync() {
       var newRole = roleNameMap[myInfo.role] || myInfo.role;
       u.currentRole = newRole;
       setUser(u);
-      updateUI(u);
       setRoleBadge('&#127917; ' + (roleNameMapRev[newRole] || newRole));
-      setStatus('&#9989; 同步成功！<br>角色: <b>' + myInfo.role + '</b>', 'ok');
+      setStatus('&#9989; 同步成功！<br>当前账号: <b>' + (u.account || '?') + '</b><br>角色: <b>' + myInfo.role + '</b>', 'ok');
     } else if (pendingReg) {
-      u._hasPending = true;
-      u._pendingRole = pendingReg.role;
-      setUser(u);
-      updateUI(u);
-      setRoleBadge('&#9203; ' + pendingReg.role + ' (审核中)', true);
+      setRoleBadge('&#9203; ' + pendingReg.role + ' (审核中)');
       setStatus('&#9203; 您的 <b>' + pendingReg.role + '</b> 申请正在审核中，请耐心等待管理员审核。<br><br><b>无需重复注册！</b>', 'warn');
     } else {
       setRoleBadge('&#10068; 未选择角色');
-      setStatus('&#10060; 云端没找到您的角色或申请<br>本地用户: ' + JSON.stringify(u).substring(0, 200), 'err');
+      setStatus('&#10060; 云端没找到您的角色或申请<br>当前账号: ' + (u.account || '?') + '<br>本地用户: ' + JSON.stringify(u).substring(0, 300), 'err');
     }
   })
   .catch(function(err) { setStatus('&#10060; 网络错误: ' + (err.message || err), 'err'); });
@@ -165,16 +205,16 @@ function doSync() {
 
 function doLogout() {
   if (confirm('确定要退出登录吗？')) {
-    localStorage.removeItem('village_user');
-    localStorage.removeItem('village_current_user');
-    localStorage.removeItem('user');
+    Object.keys(localStorage).forEach(function(k) {
+      if (k.indexOf('village_') === 0 || k === 'user') localStorage.removeItem(k);
+    });
     location.href = 'login.html';
   }
 }
 
 window.onload = function() {
-  var u = getUser();
-  if (u) { updateUI(u); doSync(); } else { setStatus('&#10060; 未登录', 'err'); }
+  var result = getUser();
+  if (result) { updateUI(result); doSync(); } else { setStatus('&#10060; 未登录', 'err'); }
 };
 </script>
 </body>
