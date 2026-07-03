@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>后台管理</title>
+  <style>/* village-h5 全局样式 */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background-color: #f5f5f5;
+  color: #333;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 顶部导航 */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #37474F, #546E7A);
+  color: white;
+  padding: 12px 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.header-title { font-size: 18px; font-weight: bold; }
+.header-back { font-size: 20px; cursor: pointer; padding: 4px 8px; }
+
+/* 主容器 */
+.container {
+  padding: 60px 16px 80px;
+  max-width: 750px;
+  margin: 0 auto;
+}
+
+/* 登录卡片 */
+.login-card {
+  background: white;
+  border-radius: 12px;
+  padding: 32px 24px;
+  margin: 20px 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.login-title {
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  color: #37474F;
+  margin-bottom: 24px;
+}
+
+/* 表单样式 */
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 14px; color: #666; margin-bottom: 6px; display: block; font-weight: bold; }
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus { border-color: #546E7A; }
+
+.btn-admin {
+  width: 100%;
+  padding: 12px;
+  background: #37474F;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-admin:active { background: #263238; }
+
+/* Tab切换 */
+.tab-nav {
+  display: flex;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.tab-nav-item {
+  flex: 1;
+  text-align: center;
+  padding: 10px 8px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  border-right: 1px solid #eee;
+  transition: all 0.2s;
+}
+
+.tab-nav-item:last-child { border-right: none; }
+.tab-nav-item.active {
+  background: #37474F;
+  color: white;
+  font-weight: bold;
+}
+
+/* 统计卡片 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.stat-value { font-size: 24px; font-weight: bold; color: #37474F; }
+.stat-label { font-size: 12px; color: #999; margin-top: 4px; }
+
+/* 村庄卡片 */
+.village-card {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.village-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.village-card-name { font-size: 15px; font-weight: bold; color: #333; }
+.village-card-chief { font-size: 12px; color: #666; }
+.village-card-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: #999;
+  flex-wrap: wrap;
+}
+
+.village-card-stat { color: #37474F; font-weight: bold; }
+
+/* 审核申请卡片 */
+.app-card {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-left: 4px solid #FF9800;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.app-card-name { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 4px; }
+.app-card-info { font-size: 12px; color: #999; margin-bottom: 8px; }
+.app-card-actions { display: flex; gap: 8px; }
+.app-card-actions button {
+  padding: 5px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  border: none;
+  font-weight: bold;
+}
+
+.app-card-actions .btn-approve { background: #4CAF50; color: white; flex: 1; }
+.app-card-actions .btn-reject { background: #F44336; color: white; flex: 1; }
+
+/* 空状态 */
+.empty-state { text-align: center; padding: 40px 20px; color: #999; }
+.empty-icon { font-size: 48px; display: block; margin-bottom: 12px; }
+
+/* Toast提示 */
+.toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 9999;
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+
+/* 隐藏 */
+.hidden { display: none; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <span class="header-back" onclick="history.back()">←</span>
+    <span class="header-title">⚙️ 后台管理</span>
+    <span style="width:40px"></span>
+  </div>
+
+  <div class="container" id="mainContainer">
+    <!-- 加载中 -->
+  </div>
+
+  <script>// village-h5 数据存储
+var Storage = {
+  get: function(key, defaultVal) {
+    try {
+      var v = localStorage.getItem('village_' + key);
+      return v ? JSON.parse(v) : defaultVal;
+    } catch(e) { return defaultVal; }
+  },
+  set: function(key, val) {
+    localStorage.setItem('village_' + key, JSON.stringify(val));
+  }
+};
+
+// 工具函数
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+function toast(msg, duration) {
+  duration = duration || 2000;
+  var existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  var el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function() { el.remove(); }, duration);
+}
+
+// 管理员账号（硬编码）
+var ADMIN_ACCOUNT = 'admin';
+var ADMIN_PASSWORD = 'admin123';
+
+// 当前状态
+var isLoggedIn = false;
+var currentTab = 'villages';
+
+// 初始化
+function init() {
+  // 检查是否已登录（从sessionStorage）
+  var savedLogin = sessionStorage.getItem('village_admin_logged');
+  if (savedLogin === 'true') {
+    isLoggedIn = true;
+  }
+  loadUI();
+}
+
+function loadUI() {
+  var container = document.getElementById('mainContainer');
+
+  if (!isLoggedIn) {
+    showLogin();
+  } else {
+    showAdminPanel();
+  }
+}
+
+// 显示登录页
+function showLogin() {
+  var container = document.getElementById('mainContainer');
+  container.innerHTML =
+    '<div class="login-card">' +
+    '<div class="login-title">🔐 管理员登录</div>' +
+    '<div class="form-group">' +
+    '<label class="form-label">管理员账号</label>' +
+    '<input class="form-input" id="adminAccount" placeholder="请输入管理员账号" value="admin">' +
+    '</div>' +
+    '<div class="form-group">' +
+    '<label class="form-label">管理员密码</label>' +
+    '<input class="form-input" id="adminPassword" type="password" placeholder="请输入管理员密码" value="admin123">' +
+    '</div>' +
+    '<button class="btn-admin" onclick="adminLogin()">登录</button>' +
+    '<div style="text-align:center;font-size:12px;color:#999;margin-top:12px;">默认账号：admin / admin123</div>' +
+    '</div>';
+}
+
+function adminLogin() {
+  var account = document.getElementById('adminAccount').value.trim();
+  var password = document.getElementById('adminPassword').value.trim();
+
+  if (!account || !password) {
+    toast('请输入账号和密码');
+    return;
+  }
+
+  if (account !== ADMIN_ACCOUNT || password !== ADMIN_PASSWORD) {
+    toast('账号或密码错误');
+    return;
+  }
+
+  isLoggedIn = true;
+  sessionStorage.setItem('village_admin_logged', 'true');
+  toast('登录成功');
+  showAdminPanel();
+}
+
+function adminLogout() {
+  if (!confirm('确定要退出登录吗？')) return;
+  isLoggedIn = false;
+  sessionStorage.removeItem('village_admin_logged');
+  showLogin();
+}
+
+// 显示管理面板
+function showAdminPanel() {
+  var container = document.getElementById('mainContainer');
+  container.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">' +
+    '<div style="font-size:16px;font-weight:bold;color:#333;">👋 管理员面板</div>' +
+    '<button onclick="adminLogout()" style="padding:4px 12px;background:#F44336;color:white;border:none;border-radius:4px;font-size:12px;cursor:pointer;">退出登录</button>' +
+    '</div>' +
+
+    '<div class="tab-nav">' +
+    '<div class="tab-nav-item active" id="tabVillages" onclick="switchTab(\'villages\')">🏘️ 村庄列表</div>' +
+    '<div class="tab-nav-item" id="tabChiefApps" onclick="switchTab(\'chiefApps\')">👤 村长注册</div>' +
+    '</div>' +
+
+    '<div id="panelVillages"></div>' +
+    '<div id="panelChiefApps" class="hidden"></div>';
+
+  loadVillageStats();
+}
+
+// Tab切换
+function switchTab(tab) {
+  var tabs = ['Villages', 'ChiefApps'];
+  for (var ti = 0; ti < tabs.length; ti++) {
+    var tabEl = document.getElementById('tab' + tabs[ti]);
+    if (tabEl) tabEl.classList.remove('active');
+  }
+  var activeTab = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1, tab.length - (tab.endsWith('Apps') ? 4 : 0)) + (tab.endsWith('Apps') ? 'Apps' : ''));
+  // 简化
+  if (tab === 'villages') {
+    document.getElementById('tabVillages').classList.add('active');
+    document.getElementById('panelVillages').classList.remove('hidden');
+    document.getElementById('panelChiefApps').classList.add('hidden');
+    loadVillageStats();
+  } else if (tab === 'chiefApps') {
+    document.getElementById('tabChiefApps').classList.add('active');
+    document.getElementById('panelVillages').classList.add('hidden');
+    document.getElementById('panelChiefApps').classList.remove('hidden');
+    loadChiefApplications();
+  }
+}
+
+// ========== 村庄统计 ==========
+
+function loadVillageStats() {
+  var panel = document.getElementById('panelVillages');
+  var villages = Storage.get('villages', []);
+  var products = Storage.get('products', []);
+  var foods = Storage.get('foods', []);
+  var camps = Storage.get('camps', []);
+
+  // 全局统计
+  var totalProducts = products.length;
+  var totalFoods = foods.length;
+  var totalCamps = camps.length;
+
+  panel.innerHTML =
+    '<div class="stats-grid">' +
+    '<div class="stat-card"><div class="stat-value">' + villages.length + '</div><div class="stat-label">村庄总数</div></div>' +
+    '<div class="stat-card"><div class="stat-value">' + totalProducts + '</div><div class="stat-label">农产品总数</div></div>' +
+    '<div class="stat-card"><div class="stat-value">' + totalFoods + '</div><div class="stat-label">美食总数</div></div>' +
+    '<div class="stat-card"><div class="stat-value">' + totalCamps + '</div><div class="stat-label">露营总数</div></div>' +
+    '</div>' +
+
+    '<div style="font-size:14px;font-weight:bold;color:#333;margin-bottom:12px;">🏘️ 村庄列表</div>';
+
+  if (villages.length === 0) {
+    panel.innerHTML += '<div class="empty-state"><span class="empty-icon">🏘️</span><div>暂无村庄数据</div></div>';
+    return;
+  }
+
+  for (var vi = 0; vi < villages.length; vi++) {
+    var v = villages[vi];
+    var pCount = 0, fCount = 0, cCount = 0;
+    for (var pi = 0; pi < products.length; pi++) {
+      if (products[pi].villageId === v.id) pCount++;
+    }
+    for (var fi = 0; fi < foods.length; fi++) {
+      if (foods[fi].villageId === v.id) fCount++;
+    }
+    for (var ci = 0; ci < camps.length; ci++) {
+      if (camps[ci].villageId === v.id) cCount++;
+    }
+
+    panel.innerHTML += '<div class="village-card">' +
+      '<div class="village-card-header">' +
+      '<span class="village-card-name">🏘️ ' + v.name + '</span>' +
+      '</div>' +
+      '<div class="village-card-chief">📞 村长：' + (v.chief ? v.chief.name : '暂无') + (v.chief && v.chief.phone ? ' (' + v.chief.phone + ')' : '') + '</div>' +
+      '<div class="village-card-chief">📍 ' + (v.province || '') + ' ' + (v.city || '') + ' | 人口：' + (v.population || '未知') + '</div>' +
+      '<div class="village-card-stats" style="margin-top:6px;">' +
+      '<span>🥬 农产品：<span class="village-card-stat">' + pCount + '</span></span>' +
+      '<span>🍜 美食：<span class="village-card-stat">' + fCount + '</span></span>' +
+      '<span>⛺ 露营：<span class="village-card-stat">' + cCount + '</span></span>' +
+      '</div>' +
+      '</div>';
+  }
+}
+
+// ========== 村长注册审核 ==========
+
+function loadChiefApplications() {
+  var panel = document.getElementById('panelChiefApps');
+
+  // 【修复】读取正确的 storage key：township_applications（与register-township.html一致）
+  var apps = Storage.get('township_applications', []);
+  var pending = [];
+  for (var i = 0; i < apps.length; i++) {
+    // 【修复】状态值匹配：'待审核'（不是'waiting'）
+    if (apps[i].status === '待审核') {
+      pending.push(apps[i]);
+    }
+  }
+
+  var approvedCount = 0;
+  var rejectedCount = 0;
+  for (var j = 0; j < apps.length; j++) {
+    if (apps[j].status === '已通过') approvedCount++;
+    else if (apps[j].status === '已拒绝') rejectedCount++;
+  }
+
+  panel.innerHTML =
+    '<div class="stats-grid" style="margin-bottom:16px;">' +
+    '<div class="stat-card"><div class="stat-value" style="color:#FF9800;">' + pending.length + '</div><div class="stat-label">待审核</div></div>' +
+    '<div class="stat-card"><div class="stat-value" style="color:#4CAF50;">' + approvedCount + '</div><div class="stat-label">已通过</div></div>' +
+    '<div class="stat-card"><div class="stat-value" style="color:#F44336;">' + rejectedCount + '</div><div class="stat-label">已拒绝</div></div>' +
+    '<div class="stat-card"><div class="stat-value">' + apps.length + '</div><div class="stat-label">申请总数</div></div>' +
+    '</div>' +
+    '<div style="font-size:14px;font-weight:bold;color:#333;margin-bottom:12px;">👤 村长注册申请</div>';
+
+  if (pending.length === 0) {
+    panel.innerHTML += '<div class="empty-state"><span class="empty-icon">👤</span><div>暂无待审核的村长注册申请</div></div>';
+    return;
+  }
+
+  for (var pi = 0; pi < pending.length; pi++) {
+    var app = pending[pi];
+    // 【修复】字段映射：app.name=村主任姓名，app.village=村庄名称
+    panel.innerHTML += '<div class="app-card">' +
+      '<div class="app-card-name">👤 ' + (app.name || '未知') + '</div>' +
+      '<div class="app-card-info">村庄：' + (app.village || '未知') + ' | 手机号：' + (app.phone || '未知') + '</div>' +
+      '<div class="app-card-info">地区：' + (app.province || '') + ' ' + (app.city || '') + '</div>' +
+      '<div class="app-card-actions">' +
+      '<button class="btn-approve" onclick="approveChief(\'' + app.id + '\')">✅ 通过</button>' +
+      '<button class="btn-reject" onclick="rejectChief(\'' + app.id + '\')">❌ 拒绝</button>' +
+      '</div>' +
+      '</div>';
+  }
+}
+
+// 通过村长注册申请
+function approveChief(appId) {
+  if (!confirm('确定通过此村长注册申请？村庄信息将被写入村庄列表。')) return;
+
+  var apps = Storage.get('township_applications', []);
+  var app = null;
+  var appIdx = -1;
+  for (var i = 0; i < apps.length; i++) {
+    if (apps[i].id === appId) { app = apps[i]; appIdx = i; break; }
+  }
+  if (!app) { toast('申请不存在'); return; }
+
+  // 更新申请状态
+  apps[appIdx].status = '已通过';
+  apps[appIdx].updateTime = Date.now();
+  Storage.set('township_applications', apps);
+
+  // 写入村庄列表
+  var villages = Storage.get('villages', []);
+  villages.push({
+    id: app.id,
+    name: app.village || '未命名村庄',
+    province: app.province || '',
+    city: app.city || '',
+    population: '',
+    totalArea: '',
+    farmlandArea: '',
+    description: '',
+    chief: { name: app.name, phone: app.phone },
+    images: [],
+    createTime: Date.now()
+  });
+  Storage.set('villages', villages);
+
+  toast('已通过，村庄已添加到列表');
+  loadChiefApplications();
+}
+
+// 拒绝村长注册申请
+function rejectChief(appId) {
+  if (!confirm('确定拒绝此申请？')) return;
+
+  var apps = Storage.get('township_applications', []);
+  for (var i = 0; i < apps.length; i++) {
+    if (apps[i].id === appId) {
+      apps[i].status = '已拒绝';
+      apps[i].updateTime = Date.now();
+      break;
+    }
+  }
+  Storage.set('township_applications', apps);
+  toast('已拒绝该申请');
+  loadChiefApplications();
+}
+
+// 页面加载完成后初始化
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
