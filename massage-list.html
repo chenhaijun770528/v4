@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💆 按摩技师</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; background: #f5f5f5; color: #333; font-size: 14px; }
+.header { position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #2E7D32, #4CAF50); color: white; padding: 12px 16px; z-index: 100; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.header-title { font-size: 18px; font-weight: bold; }
+.container { padding: 60px 16px 80px; max-width: 750px; margin: 0 auto; }
+.section-head { font-size: 15px; font-weight: bold; color: #333; margin-bottom: 12px; padding-left: 4px; }
+.massage-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); display: flex; gap: 14px; position: relative; }
+.massage-avatar { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 2px solid #2E7D32; flex-shrink: 0; background: #e8f5e9; display: flex; align-items: center; justify-content: center; font-size: 32px; }
+.massage-info { flex: 1; min-width: 0; }
+.massage-name { font-size: 16px; font-weight: bold; color: #2E7D32; margin-bottom: 6px; }
+.massage-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; font-size: 13px; color: #555; }
+.massage-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.massage-tag { background: #e8f5e9; color: #2E7D32; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+.call-btn { display: inline-flex; align-items: center; gap: 4px; background: #2E7D32; color: white; border: none; padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; margin-top: 8px; text-decoration: none; }
+.call-btn:active { background: #1B5E20; }
+.edit-btn { display: inline-flex; align-items: center; gap: 4px; background: #FF9800; color: white; border: none; padding: 6px 14px; border-radius: 20px; font-size: 13px; cursor: pointer; margin-top: 8px; margin-left: 8px; }
+.edit-btn:active { background: #E65100; }
+.empty-state { text-align: center; padding: 80px 20px; color: #999; }
+.empty-icon { font-size: 64px; display: block; margin-bottom: 16px; }
+.toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.75); color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 9999; animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity: 0; transform: translate(-50%,-50%) scale(0.8); } to { opacity: 1; transform: translate(-50%,-50%) scale(1); } }
+.tab-bar { position: fixed; bottom: 0; left: 0; right: 0; background: white; display: flex; justify-content: space-around; padding: 8px 0; box-shadow: 0 -2px 8px rgba(0,0,0,0.08); z-index: 100; }
+.tab-item { text-align: center; cursor: pointer; padding: 4px 0; }
+.tab-icon { font-size: 24px; display: block; }
+.tab-text { font-size: 11px; color: #999; margin-top: 2px; }
+/* 编辑弹窗 */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: none; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal-box { background: white; border-radius: 16px; width: 90%; max-width: 420px; max-height: 90vh; overflow-y: auto; padding: 20px; }
+.modal-title { font-size: 18px; font-weight: bold; text-align: center; margin-bottom: 16px; color: #2E7D32; }
+.modal-close { position: absolute; top: 12px; right: 16px; font-size: 24px; cursor: pointer; color: #999; }
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 13px; color: #666; margin-bottom: 4px; font-weight: bold; }
+.form-input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; box-sizing: border-box; outline: none; }
+.form-input:focus { border-color: #2E7D32; }
+.photo-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 2px solid #2E7D32; margin: 8px auto; display: block; background: #e8f5e9; }
+.photo-upload-btn { display: block; width: 100%; padding: 8px; background: #f5f5f5; border: 1px dashed #ccc; border-radius: 8px; text-align: center; font-size: 13px; color: #666; cursor: pointer; margin-top: 6px; }
+.modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+.btn-save { flex: 1; padding: 12px; background: #2E7D32; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
+.btn-cancel { flex: 1; padding: 12px; background: #f5f5f5; color: #666; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
+.btn-save:active { background: #1B5E20; }
+.btn-cancel:active { background: #e0e0e0; }
+</style>
+</head>
+<body>
+<div class="header">
+  <span style="font-size:20px;cursor:pointer;" onclick="history.back()">←</span>
+  <span class="header-title">💆 按摩技师</span>
+  <span style="width:40px"></span>
+</div>
+<div class="container">
+  <div class="section-head">已认证按摩技师 · <span id="count">0</span>人</div>
+  <div id="list"></div>
+</div>
+
+<!-- 编辑弹窗 -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal-box">
+    <div class="modal-title">✏️ 编辑我的资料</div>
+    <div class="form-group">
+      <label class="form-label">姓名 *</label>
+      <input class="form-input" id="editName" placeholder="您的姓名">
+    </div>
+    <div class="form-group">
+      <label class="form-label">联系电话 *</label>
+      <input class="form-input" id="editPhone" type="tel" placeholder="手机号码" maxlength="11">
+    </div>
+    <div class="form-group">
+      <label class="form-label">擅长项目</label>
+      <input class="form-input" id="editSkill" placeholder="如：足疗、推拿、刮痧">
+    </div>
+    <div class="form-group">
+      <label class="form-label">从业年限</label>
+      <input class="form-input" id="editYears" placeholder="如：5年">
+    </div>
+    <div class="form-group">
+      <label class="form-label">照片</label>
+      <img id="editPhotoPreview" class="photo-preview" src="" alt="照片预览">
+      <input type="file" accept="image/*" id="editPhotoFile" style="display:none" onchange="previewEditPhoto()">
+      <div class="photo-upload-btn" onclick="document.getElementById('editPhotoFile').click()">📷 点击上传/更换照片</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">户籍/注册地</label>
+      <input class="form-input" id="editRegAddress" placeholder="如：江苏省南京市">
+    </div>
+    <div class="form-group">
+      <label class="form-label">当前所在地</label>
+      <input class="form-input" id="editCurAddress" placeholder="如：上海市闵行区">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeEditModal()">取消</button>
+      <button class="btn-save" onclick="saveMyProfile()">保存修改</button>
+    </div>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <div class="tab-item" onclick="location.href='index.html'">
+    <span class="tab-icon">🏠</span>
+    <span class="tab-text">首页</span>
+  </div>
+  <div class="tab-item" onclick="location.href='register.html'">
+    <span class="tab-icon">📝</span>
+    <span class="tab-text">注册</span>
+  </div>
+  <div class="tab-item" onclick="location.href='profile.html'">
+    <span class="tab-icon">👤</span>
+    <span class="tab-text">我的</span>
+  </div>
+</div>
+<script>
+var Storage = {
+  get: function(k, d) {
+    try { var v = localStorage.getItem("village_" + k); return v ? JSON.parse(v) : d; } catch(e) { return d; }
+  },
+  set: function(k, v) {
+    try { localStorage.setItem("village_" + k, JSON.stringify(v)); } catch(e) {}
+  }
+};
+
+function toast(msg) {
+  var el = document.createElement("div");
+  el.className = "toast";
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function() { el.remove(); }, 2000);
+}
+
+// 获取当前登录用户
+function getCurrentUser() {
+  var user = Storage.get("user", null);
+  if (user && user.accountId) return user;
+  var acc = Storage.get("account", null);
+  if (acc && acc.id) return acc;
+  return null;
+}
+
+// 获取当前登录用户的按摩师记录
+function getMyTherapistRecord(regs) {
+  var currentUser = getCurrentUser();
+  if (!currentUser) return null;
+  for (var i = 0; i < regs.length; i++) {
+    var r = regs[i];
+    if (r.role === "按摩师" && r.status === "已通过" && r.accountId === currentUser.id) {
+      return { record: r, index: i };
+    }
+  }
+  return null;
+}
+
+// 压缩图片为base64
+function compressPhoto(file, callback, maxW, quality) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height;
+      if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
+      var canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, w, h);
+      callback(canvas.toDataURL("image/jpeg", quality || 0.7));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// 编辑弹窗相关
+var editPhotoData = ""; // 编辑时的新照片base64
+
+function openEditModal(record) {
+  document.getElementById("editName").value = record.name || "";
+  document.getElementById("editPhone").value = record.phone || "";
+  document.getElementById("editSkill").value = record.skill || "";
+  document.getElementById("editYears").value = record.years || "";
+  document.getElementById("editRegAddress").value = record.regAddress || "";
+  document.getElementById("editCurAddress").value = record.curAddress || "";
+  editPhotoData = record.photo || "";
+  var preview = document.getElementById("editPhotoPreview");
+  if (editPhotoData) {
+    preview.src = editPhotoData;
+  } else {
+    preview.src = "";
+    preview.style.background = "#e8f5e9";
+    preview.style.display = "block";
+    preview.outerHTML = '<img id="editPhotoPreview" class="photo-preview" src="" alt="照片预览" style="background:#e8f5e9;display:block;margin:8px auto;">';
+  }
+  document.getElementById("editModal").classList.add("show");
+}
+
+function closeEditModal() {
+  document.getElementById("editModal").classList.remove("show");
+  editPhotoData = "";
+}
+
+function previewEditPhoto() {
+  var file = document.getElementById("editPhotoFile").files[0];
+  if (!file) return;
+  compressPhoto(file, function(dataUrl) {
+    editPhotoData = dataUrl;
+    var preview = document.getElementById("editPhotoPreview");
+    preview.src = dataUrl;
+    preview.style.background = "transparent";
+  }, 400, 0.6);
+}
+
+function saveMyProfile() {
+  var name = document.getElementById("editName").value.trim();
+  var phone = document.getElementById("editPhone").value.trim();
+  if (!name || !phone) { toast("姓名和电话为必填项"); return; }
+  if (!/^1\d{10}$/.test(phone)) { toast("请输入正确的11位手机号"); return; }
+
+  var regs = Storage.get("registrations", []);
+  var myInfo = getMyTherapistRecord(regs);
+  if (!myInfo) { toast("未找到您的按摩师记录"); return; }
+
+  // 更新记录（保留原有字段，只更新可编辑字段）
+  var record = myInfo.record;
+  record.name = name;
+  record.phone = phone;
+  record.skill = document.getElementById("editSkill").value.trim();
+  record.years = document.getElementById("editYears").value.trim();
+  record.regAddress = document.getElementById("editRegAddress").value.trim();
+  record.curAddress = document.getElementById("editCurAddress").value.trim();
+  if (editPhotoData) {
+    record.photo = editPhotoData;
+  }
+  // status 保持 "已通过"，无需重新审核
+
+  regs[myInfo.index] = record;
+  Storage.set("registrations", regs);
+
+  closeEditModal();
+  toast("资料已更新！");
+  // 重新渲染
+  setTimeout(function() { renderList(); }, 500);
+}
+
+function init() {
+  renderList();
+}
+
+function renderList() {
+  var regs = Storage.get("registrations", []);
+  var list = document.getElementById("list");
+  var countEl = document.getElementById("count");
+  var therapists = [];
+  for (var i = 0; i < regs.length; i++) {
+    if (regs[i].role === "按摩师" && regs[i].status === "已通过") {
+      therapists.push({ data: regs[i], index: i });
+    }
+  }
+  countEl.textContent = therapists.length;
+
+  // 检查当前用户是否是按摩师
+  var myTherapist = getMyTherapistRecord(regs);
+  var myRecordId = myTherapist ? myTherapist.record.id : null;
+
+  if (therapists.length === 0) {
+    list.innerHTML = '<div class="empty-state"><span class="empty-icon">💆</span><div>暂无认证按摩技师</div><div style="font-size:12px;margin-top:8px;">欢迎注册成为认证按摩技师</div></div>';
+    return;
+  }
+
+  var html = "";
+  for (var j = 0; j < therapists.length; j++) {
+    var item = therapists[j];
+    var t = item.data;
+    var isMe = (t.id === myRecordId);
+    var avatar = t.photo
+      ? '<img src="' + t.photo + '" class="massage-avatar" style="object-fit:cover;">'
+      : '<div class="massage-avatar">💆</div>';
+    var phoneDisplay = t.phone || "未填写";
+    var phoneBtn = t.phone
+      ? '<a href="tel:' + t.phone + '" class="call-btn">📞 联系Ta</a>'
+      : '';
+    var editBtn = isMe
+      ? '<button class="edit-btn" onclick="openEditModal(registrations[' + item.index + '])">✏️ 编辑资料</button>'
+      : '';
+    var location = t.curAddress || t.regAddress || "未填写";
+    var skillTag = t.skill ? '<span class="massage-tag">' + t.skill + '</span>' : '';
+    var yearsTag = t.years ? '<span class="massage-tag">' + t.years + '年经验</span>' : '';
+    var villageTag = t.village ? '<span class="massage-tag">📍 ' + t.village + '</span>' : '';
+    var meTag = isMe ? '<span class="massage-tag" style="background:#FF9800;color:white;">我的</span>' : '';
+
+    html += '<div class="massage-card">' +
+      avatar +
+      '<div class="massage-info">' +
+      '<div class="massage-name">' + (t.name || "未知") + '</div>' +
+      '<div class="massage-row">📱 电话：' + phoneDisplay + '</div>' +
+      '<div class="massage-row">📍 ' + location + '</div>' +
+      '<div class="massage-tags">' + meTag + skillTag + yearsTag + villageTag + '</div>' +
+      phoneBtn + editBtn +
+      '</div></div>';
+  }
+  list.innerHTML = html;
+
+  // 供 openEditModal 调用
+  window.registrations = Storage.get("registrations", []);
+}
+
+init();
+</script>
+</body>
+</html>
