@@ -295,6 +295,12 @@ var container = document.getElementById("mainContent");
       location.href = 'login.html';
     }
 
+    // 云端同步后是否已刷新过页面（防止无限递归）
+    var hasRoleSynced = (window._profileRoleSynced === true);
+    if (!hasRoleSynced) {
+      window._profileRoleSynced = false;  // 标记尚未同步
+    }
+
     // 兼容处理：如果 currentRole 是对象，转为字符串
     if (currentUser && currentUser.currentRole && typeof currentUser.currentRole === 'object') {
       var roleMap = { 'head': 'township', 'villager': 'villager', 'tourist': 'tourist' };
@@ -370,10 +376,15 @@ function renderPage() {
               if (myInfo && myInfo.role) {
                 var roleNameMap = {'村主任':'township','村民':'villager','游客':'tourist','超市老板':'market','建筑公司':'construction','建筑园林设计师':'landscape','园林设计师':'landscape','乡村教师':'teacher','大学生':'student','律师':'lawyer','货运司机':'truck','顺风车':'carpool','按摩技师':'massage'};
                 var newRole = roleNameMap[myInfo.role] || myInfo.role;
+                // 同时兼容 currentRole 字段
+                if (myInfo.currentRole) { newRole = roleNameMap[myInfo.currentRole] || myInfo.currentRole; }
                 if (currentUser.currentRole !== newRole) {
                   console.log('[角色同步] 更新角色:', currentUser.currentRole, '->', newRole);
                   currentUser.currentRole = newRole;
                   Storage.set('user', currentUser);
+                  // 关键修复：角色已更新，立即刷新页面让用户看到新角色
+                  setTimeout(function() { location.reload(); }, 500);
+                  return;
                 }
               }
               var cloudRegs = cloudData.registrations || [];
@@ -458,7 +469,7 @@ function renderPage() {
           if (!user || !vills || !vills.length) return null;
           // 方式1: chief.name 匹配 currentRoleName
           for (var i=0;i<vills.length;i++){if(vills[i].chief&&vills[i].chief.name===user.currentRoleName)return vills[i];}
-          // 方式2: chief.name 匹��� account
+          // 方式2: chief.name 匹配 account
           for (var i=0;i<vills.length;i++){if(vills[i]&&vills[i].chief&&vills[i].chief.name===user.account)return vills[i];}
           // 方式3: chief.phone 匹配 user.phone
           for (var i=0;i<vills.length;i++){if(vills[i]&&vills[i].chief&&vills[i].chief.phone===user.phone)return vills[i];}
@@ -733,7 +744,7 @@ function renderPage() {
           scenery: window._villageScenery || [],
           createTime: Date.now()
         });
-        toast('村��创建成功！');
+        toast('村庄创建成功！');
       } else {
         var r = getMyVillage();
         if (!r) { toast('未找到村庄'); return; }
@@ -2627,7 +2638,7 @@ window.auditCamps = function() {
       Storage.set('accounts', accounts);
       document.getElementById('editContactModal').style.display = 'none';
       toast('保存成功！');
-      renderPage(); // 重新渲���页面显示新信息
+      renderPage(); // 重新渲染页面显示新信息
     }
     // 页面初始化
     function init() {
