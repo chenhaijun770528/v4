@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>游客注册 - 村庄平台</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      font-size: 14px;
+    }
+    .header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      background: linear-gradient(135deg, #2196F3, #42A5F5);
+      color: white;
+      padding: 12px 16px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .header-title { font-size: 18px; font-weight: bold; }
+    .header-back { font-size: 20px; cursor: pointer; padding: 4px 8px; }
+    .container { padding: 60px 16px 80px; max-width: 750px; margin: 0 auto; }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 13px; color: #666; margin-bottom: 5px; display: block; font-weight: 500; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      background: white;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: #2196F3; }
+    .form-textarea { resize: vertical; min-height: 80px; }
+    .btn-primary {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #2196F3, #1976D2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .auto-badge {
+      background: #E3F2FD;
+      color: #1565C0;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-size: 14px;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="header-back" onclick="history.back()">←</span>
+    <span class="header-title">🎒 游客注册</span>
+    <span style="width:40px"></span>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="card-title">👤 基本信息 <span class="auto-badge">✅ 自动通过</span></div>
+      <div class="form-group">
+        <label class="form-label">姓名 *</label>
+        <input class="form-input" id="name" placeholder="请输入姓名">
+      </div>
+      <div class="form-group">
+        <label class="form-label">手机号 *</label>
+        <input class="form-input" id="phone" type="tel" placeholder="请输入11位手机号" maxlength="11">
+      </div>
+      <div class="form-group">
+        <label class="form-label">性别</label>
+        <select class="form-select" id="gender">
+          <option value="">请选择</option>
+          <option value="男">男</option>
+          <option value="女">女</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🎒 出行信息</div>
+      <div class="form-group">
+        <label class="form-label">出行目的</label>
+        <select class="form-select" id="purpose">
+          <option value="">请选择</option>
+          <option value="休闲度假">休闲度假</option>
+          <option value="探亲访友">探亲访友</option>
+          <option value="乡村体验">乡村体验</option>
+          <option value="摄影采风">摄影采风</option>
+          <option value="研学旅行">研学旅行</option>
+          <option value="其他">其他</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">预计出行日期</label>
+        <input class="form-input" id="travelDate" type="date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">出行天数</label>
+        <select class="form-select" id="days">
+          <option value="">请选择</option>
+          <option value="1天">1天</option>
+          <option value="2-3天">2-3天</option>
+          <option value="4-7天">4-7天</option>
+          <option value="7天以上">7天以上</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏠 住宿偏好</div>
+      <div class="form-group">
+        <label class="form-label">住宿类型</label>
+        <select class="form-select" id="accommodation">
+          <option value="">请选择</option>
+          <option value="农家乐">农家乐</option>
+          <option value="民宿">民宿</option>
+          <option value="露营">露营</option>
+          <option value="酒店">酒店</option>
+          <option value="无所谓">无所谓</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">其他要求</label>
+        <textarea class="form-textarea" id="notes" placeholder="如有特殊需求请备注..."></textarea>
+      </div>
+    </div>
+
+    <button class="btn-primary" onclick="submitTourist()">注册游客身份</button>
+    <div style="text-align:center;margin-top:12px;font-size:12px;color:#999">游客身份自动通过审核，可直接使用全部功能</div>
+  </div>
+
+  <script>
+    var Storage = {
+      get: function(key, defaultVal) {
+        try {
+          var v = localStorage.getItem(key);
+          return v ? JSON.parse(v) : defaultVal;
+        } catch(e) { return defaultVal; }
+      },
+      set: function(key, val) {
+        localStorage.setItem(key, JSON.stringify(val));
+      }
+    };
+
+    function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+
+    function toast(msg) {
+      var el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(function() { el.remove(); }, 2000);
+    }
+
+    function submitTourist() {
+      var name = document.getElementById('name').value.trim();
+      var phone = document.getElementById('phone').value.trim();
+      if (!name) { alert('请输入姓名'); return; }
+      if (!phone || !/^1\d{10}$/.test(phone)) { alert('请输入正确的手机号'); return; }
+      var btn = document.querySelector('button[onclick="submitTourist()"]');
+      if (btn) { btn.disabled = true; btn.textContent = '提交中...'; }
+      var regData = {
+        id: 'r' + Date.now(),
+        role: '游客',
+        name: name,
+        phone: phone,
+        gender: (document.getElementById('gender') || {value:''}).value,
+        purpose: (document.getElementById('purpose') || {value:''}).value,
+        travelDate: (document.getElementById('travelDate') || {value:''}).value,
+        days: (document.getElementById('days') || {value:''}).value,
+        accommodation: (document.getElementById('accommodation') || {value:''}).value,
+        notes: (document.getElementById('notes') || {value:''}).value.trim(),
+        status: '待审核',
+        createdAt: Date.now()
+      };
+      cloudAddRegistration(regData).then(function() {
+        alert('申请已提交！');
+        document.querySelector('.form-card').reset();
+        if (btn) { btn.disabled = false; btn.textContent = '注册游客身份'; }
+        setTimeout(function() { location.href = 'index.html'; }, 1500);
+    var btn = document.querySelector('button[onclick="submit()"]');
+    if (btn) { btn.disabled = true; btn.textContent = '已提交'; }
+    alert('申请成功！等待管理员审核。');
+    setTimeout(function() { location.href = 'index.html'; }, 2000);
+  })
+  .catch(function(err) {
+    var btn = document.querySelector('button[onclick="submit()"]');
+    if (btn) { btn.disabled = false; btn.textContent = '重新提交'; }
+    alert('提交失败，请检查网络后重试。');
+  });
+    }ld;font-size:16px;margin-bottom:12px;color:#2E7D32;">&#10003; 注册成功！</div>' +
+        '<div style="color:#666;font-size:13px;margin-bottom:10px;">请复制下方链接发给管理员（如需审核）：</div>' +
+        '<textarea id="shareLinkArea" readonly style="width:100%;height:80px;font-size:12px;border:1px solid #ddd;border-radius:6px;padding:8px;resize:none;box-sizing:border-box;margin-bottom:10px;"></textarea>' +
+        '<button id="copyBtn" style="width:100%;padding:10px;background:#FF9800;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;margin-bottom:8px;">&#128203; 复制链接</button>' +
+        '<button onclick="location.href=\'index.html\'" style="width:100%;padding:10px;background:#2E7D32;color:#fff;border:none;border-radius:6px;font-size:14px;cursor:pointer;">返回首页</button>' +
+        '</div>';
+      document.body.appendChild(modal);
+      document.getElementById('shareLinkArea').value = shareLink;
+      document.getElementById('copyBtn').onclick = function() {
+        document.getElementById('shareLinkArea').select();
+        document.execCommand('copy');
+        this.textContent = '&#10003; 已复制！';
+        setTimeout(function() { location.href = 'index.html'; }, 1000);
+      };
+    }
+
+      toast('注册成功！游客身份已开通'); showShareLink(data);
+      setTimeout(function() { location.href = 'index.html'; }, 1500);
+    }
+  </script>
+<script src="cloud_db.js">
+if (typeof CloudDB !== 'undefined' && CloudDB.loadFromPublic) {
+  CloudDB.loadFromPublic().catch(function(){});
+}
+</script>
+<script src="share_helper.js"></script>
+</body>
+</html>
