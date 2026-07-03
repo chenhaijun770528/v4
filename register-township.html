@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>村主任注册</title>
+  <style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif; background-color: #f5f5f5; color: #333; font-size: 14px; line-height: 1.5; }
+.header { position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #2E7D32, #4CAF50); color: white; padding: 12px 16px; z-index: 100; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.header-title { font-size: 18px; font-weight: bold; }
+.header-back { font-size: 20px; cursor: pointer; padding: 4px 8px; }
+.container { padding: 60px 16px 80px; max-width: 750px; margin: 0 auto; }
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 14px; color: #666; margin-bottom: 6px; display: block; }
+.form-input { width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+.form-input:focus { border-color: #2E7D32; }
+.btn-primary { width: 100%; padding: 12px; background: #2E7D32; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+.btn-primary:active { background: #1B5E20; }
+.form-page { padding: 20px 16px; }
+.form-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.notice-box { background: #FFF8E1; border: 1px solid #FFE082; border-radius: 8px; padding: 12px; margin-bottom: 16px; font-size: 13px; color: #F57C00; line-height: 1.6; }
+.toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.75); color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 9999; animation: fadeIn 0.3s; }
+@keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="header-back" onclick="history.back()">←</span>
+    <span class="header-title">👔 村主任注册</span>
+    <span style="width:40px"></span>
+  </div>
+  <div class="container">
+    <div class="form-page">
+      <div style="text-align:center;margin-bottom:20px">
+        <span style="font-size:48px">👔</span>
+        <div style="font-size:14px;color:#666;margin-top:8px">村主任入驻通道</div>
+      </div>
+
+      <div class="notice-box">
+        ⚠️ 请仔细填写以下信息，提交后将由平台管理员审核，审核通过后正式成为村主任。
+      </div>
+
+      <div class="form-card">
+        <div class="form-group">
+          <label class="form-label">姓名 *</label>
+          <input class="form-input" id="name" placeholder="村主任姓名">
+        </div>
+        <div class="form-group">
+          <label class="form-label">手机号 *</label>
+          <input class="form-input" id="phone" type="tel" placeholder="手机号" maxlength="11">
+        </div>
+        <div class="form-group">
+          <label class="form-label">拟任职村庄名称 *</label>
+          <input class="form-input" id="village" placeholder="计划管理的村庄名称">
+        </div>
+        <div class="form-group">
+          <label class="form-label">省份</label>
+          <input class="form-input" id="province" placeholder="如：江苏省">
+        </div>
+        <div class="form-group">
+          <label class="form-label">城市</label>
+          <input class="form-input" id="city" placeholder="如：苏州市">
+        </div>
+        <div class="form-group">
+          <label class="form-label">任职年限</label>
+          <input class="form-input" id="years" placeholder="如：3年">
+        </div>
+        <div class="form-group">
+          <label class="form-label">村委地址</label>
+          <input class="form-input" id="address" placeholder="村委办公地址">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="submit()">提交申请</button>
+    </div>
+  </div>
+
+  <script>
+var DB = { villages:[], products:[], camps:[], roles:[], messages:[], favorites:[], history:[] };
+var genId = function() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); };
+var formatTime = function(ts) {
+  var d = new Date(ts), now = Date.now(), diff = now - ts;
+  if (diff < 60000) return '刚刚';
+  if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+  return d.toLocaleDateString('zh-CN');
+};
+var toast = function(msg, duration) {
+  duration = duration || 2000;
+  var existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  var el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function() { el.remove(); }, duration);
+};
+var Storage = {
+  get: function(key, defaultVal) {
+    try {
+      var v = localStorage.getItem('village_' + key);
+      return v ? JSON.parse(v) : defaultVal;
+    } catch(e) { return defaultVal; }
+  },
+  set: function(key, val) {
+    localStorage.setItem('village_' + key, JSON.stringify(val));
+  }
+};
+    function submit() {
+      var name = document.getElementById('name').value.trim();
+      var phone = document.getElementById('phone').value.trim();
+      if (!name) { alert('请输入姓名'); return; }
+      if (!phone || !/^1\d{10}$/.test(phone)) { alert('请输入正确的手机号'); return; }
+      var villageInput = document.getElementById('village');
+      var villageName = villageInput ? villageInput.value.trim() : '';
+      if (!villageName) { alert('请输入村庄名称'); return; }
+      var btn = document.querySelector('button[onclick="submit()"]');
+      if (btn) { btn.disabled = true; btn.textContent = '提交中...'; }
+      var regData = {
+        id: 'r' + Date.now(),
+        role: '村主任',
+        name: name,
+        phone: phone,
+        village: villageName,
+        province: (document.getElementById('province') || {value:''}).value.trim(),
+        city: (document.getElementById('city') || {value:''}).value.trim(),
+        description: (document.getElementById('description') || {value:''}).value.trim(),
+        status: '待审核',
+        createdAt: Date.now()
+      };
+      cloudAddRegistration(regData).then(function() {
+        alert('申请已提交，等待管理员审核！');
+        document.getElementById('regForm').reset();
+        if (btn) { btn.disabled = false; btn.textContent = '提交'; }
+        setTimeout(function() { location.href = 'index.html'; }, 1500);
+    var btn = document.querySelector('button[onclick="submit()"]');
+    if (btn) { btn.disabled = true; btn.textContent = '已提交'; }
+    alert('申请成功！等待管理员审核。');
+    setTimeout(function() { location.href = 'index.html'; }, 2000);
+  })
+  .catch(function(err) {
+    var btn = document.querySelector('button[onclick="submit()"]');
+    if (btn) { btn.disabled = false; btn.textContent = '重新提交'; }
+    alert('提交失败，请检查网络后重试。');
+  });
+    }
+  </script>
+<script src="cloud_db.js">
+if (typeof CloudDB !== 'undefined' && CloudDB.loadFromPublic) {
+  CloudDB.loadFromPublic().catch(function(){});
+}
+</script>
+<script src="share_helper.js"></script>
+</body>
+</html>
