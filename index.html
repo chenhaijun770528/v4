@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>村庄开发</title>
+  <style>
+/* village-h5 全局样式 */
+/* 主题色：绿色乡土风格 #2E7D32 */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background-color: #f5f5f5;
+  color: #333;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 顶部导航 */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #2E7D32, #4CAF50);
+  color: white;
+  padding: 12px 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.header-title { font-size: 18px; font-weight: bold; }
+.header-back { font-size: 20px; cursor: pointer; padding: 4px 8px; }
+
+/* 主容器 */
+.container {
+  padding: 60px 16px 80px;
+  max-width: 750px;
+  margin: 0 auto;
+}
+
+/* 搜索栏 */
+.search-bar {
+  background: white;
+  border-radius: 25px;
+  padding: 10px 16px;
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  cursor: pointer;
+}
+
+.search-bar input {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 14px;
+  background: transparent;
+}
+
+/* 轮播图 */
+.banner-swiper {
+  border-radius: 12px;
+  overflow: hidden;
+  height: 180px;
+  margin-bottom: 16px;
+}
+
+.banner-swiper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 功能入口网格 */
+.func-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.func-item {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 8px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  transition: transform 0.2s;
+}
+
+.func-item:active { transform: scale(0.95); }
+.func-icon { font-size: 28px; display: block; margin-bottom: 4px; }
+.func-text { font-size: 12px; color: #666; }
+
+/* 村庄卡片 */
+.section-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.village-count { font-size: 12px; color: #999; font-weight: normal; }
+
+.village-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.village-card:active { transform: scale(0.98); }
+
+.village-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.village-name { font-size: 16px; font-weight: bold; color: #2E7D32; }
+.village-location { font-size: 12px; color: #999; margin-top: 2px; }
+.village-population { text-align: right; }
+.population-number { font-size: 20px; font-weight: bold; color: #FF9800; }
+.population-label { font-size: 11px; color: #999; }
+
+.village-stats {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.stat-item { flex: 1; display: flex; align-items: center; gap: 6px; }
+.stat-icon { font-size: 18px; }
+.stat-value { font-size: 14px; font-weight: bold; color: #333; }
+.stat-label { font-size: 11px; color: #999; }
+
+.village-desc {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.village-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  flex: 1;
+  background: #f0f7f0;
+  color: #2E7D32;
+  border-radius: 20px;
+  padding: 6px 0;
+  text-align: center;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.action-btn:active { background: #2E7D32; color: white; }
+
+/* 底部导航 */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+  z-index: 100;
+}
+
+.tab-item {
+  text-align: center;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.tab-icon { font-size: 24px; display: block; }
+.tab-text { font-size: 11px; color: #999; margin-top: 2px; }
+.tab-item.active .tab-text { color: #2E7D32; }
+
+/* 表单样式 */
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 14px; color: #666; margin-bottom: 6px; display: block; }
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus { border-color: #2E7D32; }
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: #2E7D32;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.btn-primary:active { background: #1B5E20; }
+
+/* 卡片详情页 */
+.detail-header { margin-bottom: 20px; }
+.detail-title { font-size: 22px; font-weight: bold; color: #2E7D32; margin-bottom: 8px; }
+.detail-meta { font-size: 12px; color: #999; }
+
+.detail-section {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.detail-section h3 { font-size: 15px; color: #2E7D32; margin-bottom: 10px; }
+.detail-section p { font-size: 14px; color: #666; line-height: 1.8; }
+
+/* 图片网格 */
+.img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.img-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; }
+
+/* 空状态 */
+.empty-state { text-align: center; padding: 60px 20px; color: #999; }
+.empty-icon { font-size: 48px; display: block; margin-bottom: 12px; }
+
+/* Toast提示 */
+.toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 9999;
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+
+/* 加载状态 */
+.loading { text-align: center; padding: 20px; color: #999; }
+
+/* 角色选择页 */
+.role-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.role-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px 16px;
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid #e0e0e0;
+  transition: all 0.2s;
+}
+
+.role-card.selected { border-color: #2E7D32; background: #f0f7f0; }
+.role-icon { font-size: 36px; display: block; margin-bottom: 8px; }
+.role-name { font-size: 14px; font-weight: bold; color: #333; }
+
+/* 农产品卡片 */
+.product-card { background: white; border-radius: 12px; overflow: hidden; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; }
+.product-card:active { transform: scale(0.98); }
+.product-img { width: 100%; height: 160px; object-fit: cover; }
+.product-info { padding: 12px; }
+.product-name { font-size: 15px; font-weight: bold; color: #333; margin-bottom: 4px; }
+.product-price { font-size: 18px; color: #FF9800; font-weight: bold; }
+.product-unit { font-size: 12px; color: #999; font-weight: normal; }
+
+/* 商品列表 */
+.goods-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.goods-card { background: white; border-radius: 8px; overflow: hidden; }
+.goods-img { width: 100%; height: 120px; object-fit: cover; }
+.goods-info { padding: 8px; }
+.goods-name { font-size: 13px; color: #333; margin-bottom: 4px; }
+.goods-price { font-size: 16px; color: #FF9800; font-weight: bold; }
+.goods-btn { background: #2E7D32; color: white; border: none; width: 100%; padding: 6px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-top: 6px; }
+
+/* 露营页面 */
+.camp-card { background: white; border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+.camp-img { width: 100%; height: 180px; object-fit: cover; }
+.camp-info { padding: 12px; }
+.camp-name { font-size: 15px; font-weight: bold; margin-bottom: 4px; }
+.camp-desc { font-size: 12px; color: #666; margin-bottom: 8px; }
+.camp-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.camp-tag { background: #f0f7f0; color: #2E7D32; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+
+/* 我的页面 */
+.profile-header {
+  background: linear-gradient(135deg, #2E7D32, #4CAF50);
+  color: white;
+  padding: 30px 16px;
+  text-align: center;
+}
+
+.avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); font-size: 36px; line-height: 70px; background: rgba(255,255,255,0.2); margin: 0 auto 10px; }
+.nickname { font-size: 18px; font-weight: bold; }
+
+.profile-stats { display: flex; justify-content: space-around; padding: 16px; background: white; margin-bottom: 12px; border-radius: 12px; }
+.profile-stat { text-align: center; }
+.profile-stat-num { font-size: 18px; font-weight: bold; color: #2E7D32; }
+.profile-stat-label { font-size: 11px; color: #999; }
+
+.menu-list { background: white; border-radius: 12px; overflow: hidden; }
+.menu-item { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+.menu-item:last-child { border-bottom: none; }
+.menu-item-left { display: flex; align-items: center; gap: 10px; }
+.menu-icon { font-size: 20px; }
+.menu-name { font-size: 14px; color: #333; }
+.menu-arrow { color: #ccc; font-size: 16px; }
+
+/* 收藏/历史/点评列表 */
+.list-card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; gap: 12px; cursor: pointer; }
+.list-thumb { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+.list-info { flex: 1; }
+.list-title { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 4px; }
+.list-meta { font-size: 12px; color: #999; }
+
+/* 评论区 */
+.comment-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.comment-user { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.comment-avatar { width: 32px; height: 32px; border-radius: 50%; background: #e0e0e0; font-size: 16px; text-align: center; line-height: 32px; }
+.comment-name { font-size: 13px; font-weight: bold; color: #333; }
+.comment-text { font-size: 13px; color: #555; line-height: 1.6; }
+.comment-time { font-size: 11px; color: #bbb; margin-top: 4px; }
+
+/* 留言板 */
+.message-board { background: white; border-radius: 12px; padding: 16px; }
+.message-input-wrap { display: flex; gap: 8px; margin-bottom: 16px; }
+.message-input { flex: 1; padding: 10px; border: 1px solid #e0e0e0; border-radius: 20px; outline: none; font-size: 13px; }
+.message-send { background: #2E7D32; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-size: 13px; cursor: pointer; }
+
+/* 点赞 */
+.like-btn { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #999; cursor: pointer; }
+.like-btn.liked { color: #FF6B6B; }
+.like-icon { font-size: 16px; }
+
+/* 分享弹窗 */
+.share-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: flex-end; }
+.share-modal.show { display: flex; }
+.share-panel { background: white; width: 100%; padding: 20px; border-radius: 16px 16px 0 0; }
+.share-title { text-align: center; font-size: 14px; color: #666; margin-bottom: 16px; }
+.share-icons { display: flex; justify-content: space-around; }
+.share-icon-item { text-align: center; cursor: pointer; }
+.share-icon-item span { font-size: 40px; display: block; margin-bottom: 6px; }
+.share-icon-item small { font-size: 12px; color: #666; }
+.share-close { margin-top: 12px; text-align: center; color: #999; padding: 10px; cursor: pointer; }
+
+/* 加载更多 */
+.load-more { text-align: center; padding: 16px; color: #999; font-size: 13px; cursor: pointer; }
+
+/* 页面切换动画 */
+.page { display: none; }
+.page.active { display: block; animation: fadeIn 0.2s; }
+
+/* 表单页面 */
+.form-page { padding: 20px 16px; }
+.form-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.form-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.form-row:last-child { border-bottom: none; }
+.form-row-label { width: 100px; font-size: 14px; color: #666; flex-shrink: 0; }
+.form-row-value { flex: 1; font-size: 14px; color: #333; }
+
+/* 响应式 */
+@media (max-width: 375px) {
+  .func-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .func-item { padding: 12px 4px; }
+  .func-text { font-size: 11px; }
+}
+
+/* 公告版面 */
+.announcement-section {
+  background: white;
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  border-left: 4px solid #FF9800;
+}
+.announcement-header { display: flex; align-items: center; margin-bottom: 10px; }
+.announcement-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+}
+.announcement-item:last-child { border-bottom: none; }
+.announcement-title { font-size: 14px; color: #333; font-weight: bold; margin-bottom: 2px; }
+.announcement-meta { font-size: 11px; color: #999; }
+.announcement-content { font-size: 13px; color: #666; margin-top: 4px; line-height: 1.6; display: block; }
+.announcement-item.expanded .announcement-content { display: block; }
+</style>
+
+<script>
+// 从云端拉取最新数据
+(function() {
+  var t = Date.now();
+  var s = document.createElement("script");
+  s.src = "https://chenhaijun770528.github.io/village-h5/cloud_data.js?t=" + t;
+  s.onload = function() {
+    if (window.CLOUD_DATA) {
+      Object.keys(window.CLOUD_DATA).forEach(function(key) {
+        try { localStorage.setItem("village_" + key, JSON.stringify(window.CLOUD_DATA[key])); } catch(e) {}
+      });
+      console.log("Cloud data loaded");
+    }
+  };
+  document.head.appendChild(s);
+})();
+</script>
+</head>
+<body>
+  <!-- 顶部导航 -->
+  <div class="header">
+    <span class="header-title">🏘️ 村庄开发</span>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <a href="tel:13913627704" style="color:white;text-decoration:none;font-size:13px;display:flex;align-items:center;gap:4px;white-space:nowrap;">📞 13913627704</a>
+      <span onclick="goProfile()" style="font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;">👤 我的</span>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- 搜索栏 -->
+    <div class="search-bar" onclick="showSearch()">
+      <span>🔍</span>
+      <input type="text" placeholder="搜索村庄名称..." id="searchInput" readonly>
+    </div>
+
+    <!-- 公告版面 -->
+    <div id="announcementSection" class="announcement-section" style="display:none;">
+      <div class="announcement-header">
+        <span style="font-size:16px;font-weight:bold;color:#333;">📢 公告通知</span>
+        <span id="announcementBadge" style="background:#F44336;color:white;font-size:11px;padding:1px 6px;border-radius:8px;margin-left:6px;display:none;">NEW</span>
+      </div>
+      <div id="announcementList"></div>
+    </div>
+
+
+    <!-- 轮播图 -->
+    <div class="banner-swiper" id="bannerSwiper"></div>
+
+    <!-- 功能入口 -->
+    <div class="func-grid">
+      <div class="func-item" onclick="goPage('register.html')">
+        <span class="func-icon">📝</span>
+        <span class="func-text">注册</span>
+      </div>
+      <div class="func-item" onclick="goPage('agricultural-products.html')">
+        <span class="func-icon">🥬</span>
+        <span class="func-text">农产品</span>
+      </div>
+      <div class="func-item" onclick="goPage('product-order.html')">
+        <span class="func-icon">🛒</span>
+        <span class="func-text">下单</span>
+      </div>
+      <div class="func-item" onclick="goPage('country-camping.html')">
+        <span class="func-icon">🏕️</span>
+        <span class="func-text">露营</span>
+      </div>
+      <div class="func-item" onclick="filterBy('province')">
+        <span class="func-icon">📍</span>
+        <span class="func-text">按地区</span>
+      </div>
+      <div class="func-item" onclick="filterBy('population')">
+        <span class="func-icon">👥</span>
+        <span class="func-text">按人口</span>
+      </div>
+      <div class="func-item" onclick="filterBy('area')">
+        <span class="func-icon">🗺️</span>
+        <span class="func-text">按面积</span>
+      </div>
+      <div class="func-item" onclick="goPage('profile.html')">
+        <span class="func-icon">👤</span>
+        <span class="func-text">我的</span>
+      </div>
+    <div class="func-item" onclick="goPage('massage-list.html')"><span class="func-icon">💆</span><span class="func-text">按摩</span></div></div>
+
+        <!-- 按摩技师板块 -->
+    <div id="massageSection" class="section" style="display:none;">
+      <div class="section-title">
+        💆 按摩技师
+        <span style="font-size:12px;color:#999;font-weight:normal;margin-left:4px;">已认证</span>
+      </div>
+      <div class="massage-list"></div>
+    </div>
+
+<!-- 村庄列表 -->
+    <div class="section">
+      <div class="section-title">
+        🏘️ 村庄列表
+        <span class="village-count" id="villageCount">共 0 个村庄</span>
+      </div>
+      <div id="villageList"></div>
+      <div class="load-more" id="loadMore" onclick="loadMore()" style="display:none">加载更多 ↓</div>
+    </div>
+  </div>
+
+  <!-- 底部导�� -->
+  <div class="tab-bar">
+    <div class="tab-item active" onclick="goPage('index.html')">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-text">首页</span>
+    </div>
+    <div class="tab-item" onclick="goPage('register.html')">
+      <span class="tab-icon">📝</span>
+      <span class="tab-text">注册</span>
+    </div>
+    <div class="tab-item" onclick="goPage('profile.html')">
+      <span class="tab-icon">👤</span>
+      <span class="tab-text">我的</span>
+    </div>
+  </div>
+
+  <!-- 分享弹窗 -->
+  <div class="share-modal" id="shareModal">
+    <div class="share-panel">
+      <div class="share-title">分享到</div>
+      <div class="share-icons">
+        <div class="share-icon-item" onclick="shareTo('wechat')">
+          <span>💬</span>
+          <small>微信</small>
+        </div>
+        <div class="share-icon-item" onclick="shareTo('weibo')">
+          <span>📱</span>
+          <small>微博</small>
+        </div>
+        <div class="share-icon-item" onclick="shareCopy()">
+          <span>🔗</span>
+          <small>复制链接</small>
+        </div>
+      </div>
+      <div class="share-close" onclick="closeShare()">取消</div>
+    </div>
+  </div>
+
+  <script>
+// village-h5 数据层
+// 模拟数据（后续可替换为真实API）
+
+const DB = {
+  // 村庄数据
+  villages: [
+    {
+      id: 'v1',
+      name: '��福村',
+      province: '江苏省',
+      city: '苏州市',
+      population: '3280',
+      totalArea: '4500',
+      farmlandArea: '2800',
+      commercialArea: '200',
+      description: '幸福村位于苏州市郊区，环境优美，基础设施完善，是著名的生态农业示范村。村内有千年古银杏树、多彩田园，是周末休闲的好去处。',
+      chief: { name: '张建国', phone: '13800138001' },
+      scenery: [
+        { id: 's1', title: '千年古银杏', desc: '树龄超过800年，树高25米，胸围6米', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' },
+        { id: 's2', title: '多彩田园', desc: '四季变换的稻田画，色彩斑斓', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' },
+        { id: 's3', title: '荷塘月色', desc: '夏季荷花盛开，清香四溢', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' }
+      ],
+      food: [
+        { id: 'f1', name: '农家土鸡', price: '98', unit: '只', desc: '散养土鸡，肉质鲜嫩', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' },
+        { id: 'f2', name: '新鲜虾仁', price: '58', unit: '斤', desc: '本地河虾，当日捕捞', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' },
+        { id: 'f3', name: '手工年糕', price: '25', unit: '斤', desc: '传统工艺，口感软糯', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' }
+      ],
+      images: ['data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=']
+    },
+    {
+      id: 'v2',
+      name: '阳光村',
+      province: '广东省',
+      city: '广州市',
+      population: '4560',
+      totalArea: '6200',
+      farmlandArea: '3500',
+      commercialArea: '350',
+      description: '阳光村是广州市郊的现代化农村，积极发展乡村旅游和生态农业。村内有大型草莓采摘园、农家乐设施，是城市居民周末体验田园生活的好选择。',
+      chief: { name: '李明华', phone: '13800138002' },
+      scenery: [
+        { id: 's4', title: '草莓采摘园', desc: '50亩有机草莓，个大味甜', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' },
+        { id: 's5', title: '阳光花海', desc: '百亩花田，四季花开', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' }
+      ],
+      food: [
+        { id: 'f4', name: '有机草莓', price: '35', unit: '斤', desc: '有机种植，个大香甜', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' },
+        { id: 'f5', name: '客家酿豆腐', price: '38', unit: '份', desc: '传统客家美食', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' }
+      ],
+      images: ['data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=']
+    },
+    {
+      id: 'v3',
+      name: '青山村',
+      province: '湖南省',
+      city: '长沙市',
+      population: '2150',
+      totalArea: '3800',
+      farmlandArea: '1800',
+      commercialArea: '150',
+      description: '青山村坐落于长株潭后花园，森林覆盖率超过70%，空气清新，是天然的氧吧。村内有古民居、古井等历史遗迹，适合徒步探险和研学旅行。',
+      chief: { name: '王志强', phone: '13800138003' },
+      scenery: [
+        { id: 's6', title: '古民居群', desc: '保存完好的明清古建筑', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' },
+        { id: 's7', title: '千年古井', desc: '井水清澈，冬暖夏凉', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' },
+        { id: 's8', title: '竹林氧吧', desc: '百亩竹林，呼吸自然', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' }
+      ],
+      food: [
+        { id: 'f6', name: '竹林土鸡', price: '108', unit: '只', desc: '竹林散养，营养丰富', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' },
+        { id: 'f7', name: '手工竹笋干', price: '45', unit: '斤', desc: '春季竹笋，自然晾晒', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' }
+      ],
+      images: ['data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=']
+    }
+  ],
+
+  // 农产品
+  products: [
+    { id: 'p1', name: '有机大米', price: '68', unit: '袋/10斤', desc: '绿色有机种植，口感香糯', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', sales: 328 },
+    { id: 'p2', name: '土鸡蛋', price: '45', unit: '盒/30枚', desc: '散养土鸡，蛋黄饱满', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', sales: 256 },
+    { id: 'p3', name: '新鲜蜂蜜', price: '88', unit: '瓶/500g', desc: '深山百花蜜，纯天然', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', sales: 189 },
+    { id: 'p4', name: '农家菜籽油', price: '58', unit: '瓶/2L', desc: '传统压榨，香浓健康', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', sales: 412 },
+    { id: 'p5', name: '干香菇', price: '78', unit: '袋/500g', desc: '深山椴木种植，香味浓郁', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', sales: 167 },
+    { id: 'p6', name: '红薯粉条', price: '35', unit: '袋/500g', desc: '纯手工制作，口感劲道', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', sales: 523 }
+  ],
+
+  // 露营基地
+  camps: [
+    { id: 'c1', name: '星空露营基地', desc: '海拔800米，远离光污染，是观星圣地', price: '188', unit: '顶/晚', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', tags: ['观星', '烧烤', '篝火'], features: ['专业露营帐篷', '天文望远镜租借', '烧烤设备', '24小时热水'] },
+    { id: 'c2', name: '湖畔露营区', desc: '紧邻水库，湖光山色，宁静惬意', price: '158', unit: '顶/晚', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', tags: ['钓鱼', '划船', '亲子'], features: ['湖景帐篷', '免费停车', '钓鱼工具租借', '儿童游乐区'] },
+    { id: 'c3', name: '森林木屋营地', desc: '独栋木屋掩映在松林间，呼吸森林负氧离子', price: '288', unit: '间/晚', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', tags: ['森林', '静修', '养生'], features: ['独栋木屋', '独立卫浴', '厨房设施', '森林SPA'] }
+  ],
+
+  // 角色类型（注册）
+  roles: [
+    { id: 'r1', icon: '🏠', name: '村民', path: 'register-villager.html' },
+    { id: 'r2', icon: '👔', name: '村主任', path: 'register-township.html' },
+    { id: 'r3', icon: '🏪', name: '超市老板', path: 'register-market.html' },
+    { id: 'r4', icon: '🏗️', name: '建筑公司', path: 'register-construction.html' },
+    { id: 'r5', icon: '📚', name: '老师', path: 'register-teacher.html' },
+    { id: 'r6', icon: '🎓', name: '大学生', path: 'register-student.html' },
+    { id: 'r7', icon: '⚖️', name: '律师事务所', path: 'register-law-firm.html' },
+    { id: 'r8', icon: '👨‍💼', name: '律师', path: 'register-lawyer.html' },
+    { id: 'r9', icon: '🚛', name: '货运司机', path: 'register-truck.html' },
+    { id: 'r10', icon: '🚗', name: '顺风车司机', path: 'register-carpool.html' },
+    { id: 'r11', icon: '💆', name: '按摩技师', path: 'register-massage.html' }
+  ],
+
+  // 留言数据
+  messages: [
+    { id: 'm1', author: '张三', avatar: '👨', text: '幸福村风景真美，周末带孩子去玩得很开心！', time: '2小时前', likes: 12 },
+    { id: 'm2', author: '李四', avatar: '👩', text: '农家乐的饭菜很好吃，老板人也很热情。', time: '5小时前', likes: 8 }
+  ],
+
+  // 我的收藏
+  favorites: [],
+
+  // 浏览历史
+  history: []
+}
+
+// 工具函数
+function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5) }
+
+function formatTime(ts) {
+  const d = new Date(ts)
+  const now = Date.now()
+  const diff = now - ts
+  if (diff < 60000) return '刚刚'
+  if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
+  if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
+  return d.toLocaleDateString('zh-CN')
+}
+
+function toast(msg, duration = 2000) {
+  const existing = document.querySelector('.toast')
+  if (existing) existing.remove()
+  const el = document.createElement('div')
+  el.className = 'toast'
+  el.textContent = msg
+  document.body.appendChild(el)
+  setTimeout(() => el.remove(), duration)
+}
+
+// 存储
+const Storage = {
+  get(key, defaultVal) {
+    try {
+      const v = localStorage.getItem('village_' + key)
+      return v ? JSON.parse(v) : defaultVal
+    } catch { return defaultVal }
+  },
+  set(key, val) {
+    localStorage.setItem('village_' + key, JSON.stringify(val))
+  }
+}
+
+// 初始化示例数据到localStorage
+function initSampleData() {
+  // 只在完全没有任何数据时才初始化，不要清空已有数据
+  if (!localStorage.getItem('village_villages')) Storage.set('villages', []);
+  if (!localStorage.getItem('village_messages')) Storage.set('messages', []);
+  if (!localStorage.getItem('village_favorites')) Storage.set('favorites', []);
+  if (!localStorage.getItem('village_history')) Storage.set('history', []);
+  if (!localStorage.getItem('village_products')) Storage.set('products', []);
+  if (!localStorage.getItem('village_foods')) Storage.set('foods', []);
+  if (!localStorage.getItem('village_camps')) Storage.set('camps', []);
+  if (!localStorage.getItem('village_product_applications')) Storage.set('product_applications', []);
+  if (!localStorage.getItem('village_food_applications')) Storage.set('food_applications', []);
+  if (!localStorage.getItem('village_camp_applications')) Storage.set('camp_applications', []);
+}
+// 数据迁移：将旧key的数据合并到新key（防止更新后数据丢失）
+function migrateData() {
+  // 从 registered_users 迁移
+  try {
+    var old = localStorage.getItem('registered_users');
+    if (old) {
+      var arr = JSON.parse(old);
+      if (Array.isArray(arr) && arr.length > 0) {
+        var cur = Storage.get('registrations', []);
+        arr.forEach(function(item) {
+          if (!cur.find(function(c) { return c.id === item.id; })) {
+            cur.push(item);
+          }
+        });
+        Storage.set('registrations', cur);
+        console.log('✅ 从 registered_users 迁移了', arr.length, '条数据');
+      }
+    }
+  } catch(e) {}
+  
+  // 从 village_registrations 迁移
+  try {
+    var old2 = localStorage.getItem('village_registrations');
+    if (old2) {
+      var arr2 = JSON.parse(old2);
+      if (Array.isArray(arr2) && arr2.length > 0) {
+        var cur2 = Storage.get('registrations', []);
+        arr2.forEach(function(item) {
+          if (!cur2.find(function(c) { return c.id === item.id; })) {
+            cur2.push(item);
+          }
+        });
+        Storage.set('registrations', cur2);
+        console.log('✅ 从 village_registrations 迁移了', arr2.length, '条数据');
+      }
+    }
+  } catch(e) {}
+}
+
+
+
+// 用户
+let currentUser = Storage.get('user', null)
+
+function login(nickName, avatarUrl) {
+  currentUser = { id: genId(), nickName, avatarUrl, time: Date.now() }
+  Storage.set('user', currentUser)
+  return currentUser
+}
+
+function logout() {
+  currentUser = null
+  localStorage.removeItem('village_user')
+}
+  
+    // 从云端加载初始数据（多设备同步）
+    function loadCloudData() {
+      if (typeof CloudDB === "undefined" || !CloudDB.loadFromPublic) return;
+      CloudDB.loadFromPublic().then(function() {
+        console.log("[CloudDB] index.html loaded from cloud");
+        // 重新加载村庄列表
+        if (typeof loadVillages === "function") loadVillages();
+        if (typeof renderMassageSection === "function") renderMassageSection();
+      }).catch(function(){});
+    }
+</script>
+  <script>
+    let pageSize = 10
+    let pageIndex = 0
+    let currentFilter = null
+    let currentBanner = 0
+
+    function init() {
+initSampleData();
+      renderBanner()
+
+      loadAnnouncements();      renderVillages()
+      loadCloudData();
+
+
+      // ===== 从云端同步当前用户的角色 =====
+      if (typeof CloudDB !== 'undefined' && CloudDB.loadFromPublic && currentUser) {
+        CloudDB.loadFromPublic().then(function() {
+          if (typeof cloudData !== 'undefined') {
+            var accounts = cloudData.accounts || [];
+            var regs = cloudData.registrations || [];
+            var myInfo = null;
+            for (var ai = 0; ai < accounts.length; ai++) {
+              if (accounts[ai].phone === currentUser.phone || accounts[ai].id === currentUser.id) { myInfo = accounts[ai]; break; }
+            }
+            if (!myInfo) {
+              for (var ri = 0; ri < regs.length; ri++) {
+                if ((regs[ri].phone === currentUser.phone || regs[ri].account === currentUser.account) && regs[ri].status === '已通过') {
+                  myInfo = { role: regs[ri].role }; break;
+                }
+              }
+            }
+            if (myInfo && myInfo.role) {
+              var roleNameMap = {'村主任':'township','村民':'villager','游客':'tourist','超市老板':'market','建筑公司':'construction','建筑园林设计师':'landscape','园林设计师':'landscape','乡村教师':'teacher','大学生':'student','律师':'lawyer','货运司机':'truck','顺风车':'carpool','按摩技师':'massage'};
+              var newRole = roleNameMap[myInfo.role] || myInfo.role;
+              if (currentUser.currentRole !== newRole) {
+                console.log('[角色同步] 更新角色:', currentUser.currentRole, '->', newRole);
+                currentUser = Storage.get('user', null) || currentUser;
+                currentUser.currentRole = newRole;
+                Storage.set('user', currentUser);
+              }
+            }
+          }
+        }).catch(function(){});
+      }
+}
+
+    function renderBanner() {
+      var banners = [
+        { title: '美丽乡村计划', color: '#2E7D32', icon: '🏘️' },
+        { title: '乡村振兴进行时', color: '#4CAF50', icon: '🌾' },
+        { title: '共建美好家园', color: '#1B5E20', icon: '🌳' }
+      ]
+      var el = document.getElementById('bannerSwiper')
+      el.style.position = 'relative'
+      el.innerHTML = banners.map(function(b, i) {
+        return '<div id="banner' + i + '" style="position:absolute;top:0;left:0;width:100%;height:100%;background:' + b.color + ';display:flex;flex-direction:column;align-items:center;justify-content:center;color:white;opacity:' + (i===0?1:0) + ';transition:opacity 0.8s"><span style="font-size:48px">' + b.icon + '</span><span style="font-size:18px;margin-top:8px;font-weight:bold">' + b.title + '</span></div>'
+      }).join('')
+      var items = []
+      for (var i = 0; i < banners.length; i++) { items.push(document.getElementById('banner' + i)) }
+
+      setInterval(function() {
+        items[currentBanner].style.opacity = '0'
+        currentBanner = (currentBanner + 1) % banners.length
+        items[currentBanner].style.opacity = '1'
+      }, 3000)
+    }
+
+    function renderVillages() {
+      var all = Storage.get('villages', DB.villages) || [];
+      var filtered = currentFilter ? filterVillages(all, currentFilter) : all;
+      var pageCount = (pageIndex + 1) * pageSize;
+      var list = filtered.slice(0, pageCount);
+      var hasMore = filtered.length > list.length;
+
+      document.getElementById('villageCount').textContent = '共 ' + filtered.length + ' 个村庄';
+      document.getElementById('loadMore').style.display = hasMore ? 'block' : 'none';
+
+      var container = document.getElementById('villageList');
+      if (!container) return;
+
+      if (list.length === 0) {
+        container.innerHTML = '<div class="empty-state"><span class="empty-icon">🏘️</span><span>暂无村庄数据</span></div>';
+        return;
+      }
+
+      var html = '';
+      for (var i = 0; i < list.length; i++) {
+        var v = list[i];
+        html += '<div class="village-card" onclick="goVillageDetail(\'' + v.id + '\')">';
+        html += '<div class="village-header"><div><div class="village-name">' + (v.name || '') + '</div>';
+        html += '<div class="village-location">📍 ' + (v.province || '') + ' ' + (v.city || '') + '</div></div>';
+        html += '<div class="village-population"><div class="population-number">' + (v.population || '') + '</div>';
+        html += '<div class="population-label">人口</div></div></div>';
+        html += '<div class="village-stats">';
+        html += '<div class="stat-item"><span class="stat-icon">🗺️</span><div><div class="stat-value">' + (v.totalArea || '') + '</div><div class="stat-label">总面积(亩)</div></div></div>';
+        html += '<div class="stat-item"><span class="stat-icon">🌾</span><div><div class="stat-value">' + (v.farmlandArea || '') + '</div><div class="stat-label">耕地(亩)</div></div></div>';
+        html += '</div>';
+        html += '<div class="village-desc">' + (v.description || '') + '</div>';
+        html += '<div class="village-actions">';
+        html += '<div class="action-btn" onclick="event.stopPropagation();goPage(\'scenery.html?id=' + v.id + '\')">🌄 风景</div>';
+        html += '<div class="action-btn" onclick="event.stopPropagation();goPage(\'food.html?id=' + v.id + '\')">🍜 美食</div>';
+        html += '<div class="action-btn" onclick="event.stopPropagation();goPage(\'planning.html?id=' + v.id + '\')">📈 规划</div>';
+        var phone = (v.chief && v.chief.phone) ? v.chief.phone : '';
+        html += '<div class="action-btn" onclick="event.stopPropagation();callChief(\'' + phone + '\')">📞 联系</div>';
+        html += '</div></div>';
+      }
+      container.innerHTML = html;
+    }
+
+    function filterVillages(list, type) {
+      if (type === 'province') {
+        const provinces = [...new Set(list.map(v => v.province))]
+        const selected = prompt('选择地区：\n' + provinces.map((p, i) => (i + 1) + '. ' + p).join('\n'))
+        if (!selected) return list
+        const idx = parseInt(selected) - 1
+        return idx >= 0 ? list.filter(v => v.province === provinces[idx]) : list
+      }
+      return list
+    }
+
+    function filterBy(type) {
+      renderVillages()
+      toast('筛选功能已触发')
+    }
+
+    function loadMore() {
+      pageIndex++;
+      renderVillages();
+    }
+
+    function showSearch() {
+      const kw = prompt('输入村庄名称搜索：')
+      if (kw) {
+        const all = Storage.get('villages', DB.villages) || []
+        const found = all.find(v => v.name.includes(kw))
+        if (found) goVillageDetail(found.id)
+        else toast('未找到匹配的村庄')
+      }
+    }
+
+    function addHistory(item) {
+      const h = Storage.get('history', [])
+      h.unshift(item)
+      Storage.set('history', h.slice(0, 100))
+    }
+
+    function showShare() {
+      document.getElementById('shareModal').classList.add('show')
+    }
+
+    function closeShare() {
+      document.getElementById('shareModal').classList.remove('show')
+    }
+
+    function shareTo(app) {
+      toast('请使用浏览器分享功能')
+      closeShare()
+    }
+
+    function shareCopy() {
+      copy(location.href)
+      toast('链接已复制')
+      closeShare()
+    }
+
+    function copy(text) {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      document.body.appendChild(ta)
+      ta.select()
+      document.execCommand('copy')
+      ta.remove()
+    }
+
+    init()
+  
+    // 加载公告
+    function loadAnnouncements() {
+      var announcements = Storage.get('announcements', []);
+      var section = document.getElementById('announcementSection');
+      var list = document.getElementById('announcementList');
+      var badge = document.getElementById('announcementBadge');
+      if (!announcements || announcements.length === 0) {
+        section.style.display = 'none';
+        return;
+      }
+      section.style.display = 'block';
+      // 检查是否有未读公告（24小时内）
+      var now = Date.now();
+      var hasNew = false;
+      for (var ai = 0; ai < announcements.length; ai++) {
+        if (now - (announcements[ai].createTime || announcements[ai].time) < 86400000) { hasNew = true; break; }
+      }
+      badge.style.display = hasNew ? 'inline-block' : 'none';
+      list.innerHTML = announcements.map(function(a, idx) {
+        var isNew = now - (a.createTime || a.time) < 86400000;
+        return '<div class="announcement-item" onclick="toggleAnnouncement(\' + idx + \')">' +
+          '<div class="announcement-title">' + (isNew ? '🆕 ' : '') + escapeHtml(a.title) + '</div>' +
+          '<div class="announcement-meta">' + formatAnnTime(a.createTime || a.time) + '</div>' +
+          '<div class="announcement-content" id="annContent' + idx + '">' + escapeHtml(a.content || '') + '</div>' +
+          '</div>';
+      }).join('');
+    }
+
+    function toggleAnnouncement(idx) {
+      var el = document.getElementById('annContent' + idx);
+      if (!el) return;
+      var parent = el.parentElement;
+      if (parent.classList.contains('expanded')) {
+        parent.classList.remove('expanded');
+      } else {
+        parent.classList.add('expanded');
+      }
+    }
+
+    function formatAnnTime(ts) {
+      var d = new Date(ts);
+      var now = Date.now();
+      var diff = now - ts;
+      if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
+      if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
+      return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+    }
+
+    function escapeHtml(str) {
+      var div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function goPage(url) {
+      location.href = url
+    }
+
+    function goProfile() {
+      var user = localStorage.getItem('village_user')
+      if (!user) {
+        location.href = 'login.html'
+      } else {
+        location.href = 'profile.html'
+      }
+    }
+
+    function callChief(phone) {
+      window.location.href = 'tel:' + phone
+    }
+
+</script>
+<script src="cloud_db.js"></script>
+
+<script>
+// 从云端加载最新数据
+if (window.CloudDB) {
+  window.CloudDB.init(function() {
+    console.log("[Index] 云端数据已加载");
+    // 触发页面重新渲染
+    if (typeof renderPage === "function") renderPage();
+    else if (typeof init === "function") init();
+  });
+}
+
+// 渲染按摩技师板块
+function renderMassageSection() {
+  var regs = Storage.get('registrations', []);
+  var approvedMassage = [];
+  for (var mi = 0; mi < regs.length; mi++) {
+    if (regs[mi].role === '按摩师' && regs[mi].status === '已通过') {
+      approvedMassage.push(regs[mi]);
+    }
+  }
+  
+  var section = document.getElementById('massageSection');
+  if (!section) return;
+  
+  if (approvedMassage.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  
+  section.style.display = 'block';
+  var list = section.querySelector('.massage-list');
+  if (!list) return;
+  
+  var html = '';
+  for (var si = 0; si < approvedMassage.length; si++) {
+    var m = approvedMassage[si];
+    html += '<div class="massage-card" onclick="goMassageDetail('' + (m.id || '') + '')" style="display:flex;align-items:center;gap:12px;padding:12px;background:white;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.08);cursor:pointer;">';
+    html += '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#81C784,#4CAF50);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">💆</div>';
+    html += '<div style="flex:1;">';
+    html += '<div style="font-weight:bold;color:#333;font-size:15px;">' + (m.name || '未知') + '</div>';
+    html += '<div style="color:#666;font-size:12px;margin-top:2px;">' + (m.skill || '专业按摩') + ' | ' + (m.years || '经验丰富') + '</div>';
+    html += '<div style="color:#999;font-size:11px;margin-top:2px;">📞 ' + (m.phone || '') + '</div>';
+    html += '</div>';
+    html += '<div style="color:#2E7D32;font-size:13px;font-weight:bold;">在线</div>';
+    html += '</div>';
+  }
+  list.innerHTML = html;
+}
+
+function goMassageDetail(id) {
+  location.href = 'massage-list.html';
+}
+
+// 首页初始化完成后渲染按摩技师
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', function() { setTimeout(renderMassageSection, 1000); });
+} else {
+  setTimeout(renderMassageSection, 1000);
+}
+
+</script>
+<script>
+// 从云端加载村庄数据
+(function() {
+  var SUPABASE_URL = "https://eivqbbxyllsorbvgqsju.supabase.co";
+  var SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpdnFiYnh5bGxzb3Jidmdxc2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MTIzMDksImV4cCI6MjA5ODI4ODMwOX0.QeKnbo1cgA0yGMOEydML3PNXatH1V1QXfW0hyxRy7KY";
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", SUPABASE_URL + "/rest/v1/village_data?id=eq.init&select=data", true);
+  xhr.setRequestHeader("apikey", SUPABASE_KEY);
+  xhr.setRequestHeader("Authorization", "Bearer " + SUPABASE_KEY);
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+      try {
+        var rows = JSON.parse(xhr.responseText);
+        if (rows && rows.length > 0 && rows[0].data && rows[0].data.villages) {
+          var cloudVillages = rows[0].data.villages;
+          // 合并到本地DB
+          if (window.DB) {
+            cloudVillages.forEach(function(cv) {
+              var exists = DB.villages.some(function(v) { return v.name === cv.name; });
+              if (!exists) DB.villages.push(cv);
+            });
+          }
+          // 替换本地存储
+          try { localStorage.setItem("village_villages", JSON.stringify(cloudVillages)); } catch(e) {}
+          // 如果有render函数，重新渲染
+          if (window.render && typeof render === "function") render();
+          // 显示云端状态
+          var strip = document.getElementById("cloudStrip");
+          if (strip) { strip.textContent = "☁️ 云端已连接"; strip.style.color = "#4CAF50"; }
+        }
+      } catch(e) {}
+    }
+  };
+  xhr.onerror = function() {};
+  xhr.send();
+
+  // 云端状态提示条
+  var strip = document.createElement("div");
+  strip.id = "cloudStrip";
+  strip.textContent = "⏳ 连接云端...";
+  strip.style.cssText = "position:fixed;top:48px;left:0;right:0;text-align:center;padding:4px;font-size:12px;background:#e3f2fd;color:#1565c0;z-index:99;";
+  document.body.appendChild(strip);
+  setTimeout(function() { var s = document.getElementById("cloudStrip"); if (s && s.textContent.indexOf("⏳") >= 0) { s.textContent = "☁️ 仅本地数据"; s.style.color = "#999"; } }, 5000);
+})();
+</script>
+</body>
+</html>
