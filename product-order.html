@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>提交订单</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;background:#f5f5f5;color:#333;font-size:14px}
+.header{position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#2E7D32,#4CAF50);color:#fff;padding:12px 16px;z-index:100;display:flex;align-items:center}
+.header-back{font-size:20px;cursor:pointer;padding-right:12px}
+.header-title{font-size:18px;font-weight:bold}
+.container{padding:60px 16px 80px;max-width:750px;margin:0 auto}
+.section{background:#fff;border-radius:10px;padding:14px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.goods-info{display:flex;gap:12px;align-items:center}
+.goods-img{width:80px;height:80px;border-radius:8px;object-fit:cover;background:#f0f0f0}
+.goods-name{font-size:15px;font-weight:600;margin-bottom:4px}
+.goods-price{font-size:18px;color:#FF9800;font-weight:bold}
+.form-group{margin-bottom:12px}
+.form-label{font-size:13px;color:#666;margin-bottom:4px;display:block;font-weight:500}
+.form-input{width:100%;border:1px solid #e0e0e0;border-radius:6px;padding:9px 10px;font-size:14px;outline:none}
+.form-input:focus{border-color:#2E7D32}
+.qty-box{display:flex;align-items:center;gap:12px}
+.qty-btn{width:32px;height:32px;border:1px solid #e0e0e0;border-radius:50%;background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.qty-num{font-size:18px;font-weight:bold;min-width:30px;text-align:center}
+.row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f0f0f0}
+.row:last-child{border:none}
+.row-label{color:#666;font-size:13px}
+.row-val{font-size:14px;font-weight:500}
+.total-price{font-size:18px;color:#FF9800;font-weight:bold}
+.btn-submit{width:100%;padding:14px;background:linear-gradient(135deg,#2E7D32,#4CAF50);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:8px;box-shadow:0 2px 8px rgba(46,125,50,.3)}
+.btn-submit:active{transform:scale(.98)}
+.tip{text-align:center;font-size:12px;color:#999;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="header">
+  <span class="header-back" onclick="history.back()">←</span>
+  <span class="header-title">提交订单</span>
+</div>
+<div class="container" id="app"></div>
+<script src="app.js"></script>
+<script>
+function init(){
+  var params=new URLSearchParams(location.search);
+  var id=params.get('id');
+  var products=Storage.get('products',[]);
+  var p=null;
+  for(var i=0;i<products.length;i++){if(products[i].id===id){p=products[i];break;}}
+  if(!p){document.getElementById('app').innerHTML='<div style="text-align:center;padding:40px;color:#999">商品不存在</div>';return;}
+
+  var price=parseFloat(p.price)||0;
+  window._p=p;
+  window._price=price;
+  window._qty=1;
+
+  document.getElementById('app').innerHTML=
+    '<div class="section"><div class="goods-info">'+
+      '<img class="goods-img" src="'+(p.img||'')+'" onerror="this.style.display=\'none\'">'+
+      '<div><div class="goods-name">'+p.name+'</div>'+
+      '<div style="font-size:12px;color:#666;margin:2px 0">'+(p.desc||'')+'</div>'+
+      '<div class="goods-price">¥'+p.price+'<span style="font-size:12px;color:#999;font-weight:normal">/'+p.unit+'</span></div>'+
+      '</div></div></div>'+
+    '<div class="section">'+
+      '<div class="form-group"><label class="form-label">收货人姓名 *</label><input class="form-input" id="buyerName" placeholder="请输入收货人姓名"></div>'+
+      '<div class="form-group"><label class="form-label">联系电话 *</label><input class="form-input" id="buyerPhone" type="tel" maxlength="11" placeholder="请输入手机号"></div>'+
+      '<div class="form-group"><label class="form-label">收货地址 *</label><input class="form-input" id="buyerAddr" placeholder="请输入收货地址"></div>'+
+      '<div class="form-group"><label class="form-label">购买数量</label>'+
+        '<div class="qty-box">'+
+          '<span class="qty-btn" onclick="changeQty(-1)">−</span>'+
+          '<span class="qty-num" id="qtyNum">1</span>'+
+          '<span class="qty-btn" onclick="changeQty(1)">+</span>'+
+        '</div></div>'+
+      '<div class="form-group"><label class="form-label">备注</label><input class="form-input" id="remark" placeholder="选填"></div>'+
+    '</div>'+
+    '<div class="section">'+
+      '<div class="row"><span class="row-label">单价</span><span class="row-val">¥'+p.price+' / '+p.unit+'</span></div>'+
+      '<div class="row"><span class="row-label">数量</span><span class="row-val" id="rowQty">1</span></div>'+
+      '<div class="row"><span class="row-label">运费</span><span class="row-val">到付</span></div>'+
+      '<div class="row"><span class="row-label" style="font-weight:bold">合计</span><span class="row-val total-price" id="rowTotal">¥'+price+'</span></div>'+
+    '</div>'+
+    '<button class="btn-submit" onclick="submitOrder()">提交订单</button>'+
+    '<div class="tip">提交后商家将尽快与您联系确认发货</div>';
+
+  // 自动带出用户资料里的电话和地址
+  var user=Storage.get('user',null);
+  if(user){
+    if(user.phone)document.getElementById('buyerPhone').value=user.phone;
+    if(user.address)document.getElementById('buyerAddr').value=user.address;
+  }
+}
+
+function changeQty(d){
+  window._qty=Math.max(1,Math.min(99,window._qty+d));
+  document.getElementById('qtyNum').textContent=window._qty;
+  document.getElementById('rowQty').textContent=window._qty;
+  document.getElementById('rowTotal').textContent='¥'+(window._price*window._qty);
+}
+
+function submitOrder(){
+  var name=document.getElementById('buyerName').value.trim();
+  var phone=document.getElementById('buyerPhone').value.trim();
+  var addr=document.getElementById('buyerAddr').value.trim();
+  var remark=document.getElementById('remark').value.trim();
+  if(!name||!phone||!addr){alert('请填写完整收货信息');return;}
+  if(!/^1\d{10}$/.test(phone)){alert('请输入正确的手机号');return;}
+
+  var p=window._p;
+  var user=Storage.get('user',null);
+  var orders=Storage.get('orders',[]);
+  orders.push({
+    id:Date.now().toString(36)+Math.random().toString(36).substr(2,5),
+    type:'product',
+    productId:p.id,
+    productName:p.name,
+    sellerId:p.sellerId||'',
+    sellerName:p.sellerName||'',
+    villageId:p.villageId||'',
+    villageName:p.village||'',
+    price:p.price,
+    unit:p.unit,
+    qty:window._qty,
+    total:window._price*window._qty,
+    buyerName:name,
+    buyerPhone:phone,
+    buyerAddr:addr,
+    buyerId:user?user.id:'',
+    buyerNick:user?user.nickName:'',
+    remark:remark,
+    status:'待发货',
+    createTime:Date.now()
+  });
+  Storage.set('orders',orders);
+
+  // 扣库存
+  var products=Storage.get('products',[]);
+  for(var i=0;i<products.length;i++){
+    if(products[i].id===p.id){
+      var stock=parseInt(products[i].stock)||0;
+      products[i].stock=Math.max(0,stock-window._qty);
+      products[i].sales=(parseInt(products[i].sales)||0)+window._qty;
+      break;
+    }
+  }
+  Storage.set('products',products);
+
+  alert('订单提交成功！商家将尽快与您联系。');
+  history.back();
+}
+
+init();
+</script>
+</body>
+</html>
