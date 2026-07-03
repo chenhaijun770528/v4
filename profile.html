@@ -458,7 +458,7 @@ function renderPage() {
           if (!user || !vills || !vills.length) return null;
           // 方式1: chief.name 匹配 currentRoleName
           for (var i=0;i<vills.length;i++){if(vills[i].chief&&vills[i].chief.name===user.currentRoleName)return vills[i];}
-          // 方式2: chief.name 匹配 account
+          // 方式2: chief.name 匹��� account
           for (var i=0;i<vills.length;i++){if(vills[i]&&vills[i].chief&&vills[i].chief.name===user.account)return vills[i];}
           // 方式3: chief.phone 匹配 user.phone
           for (var i=0;i<vills.length;i++){if(vills[i]&&vills[i].chief&&vills[i].chief.phone===user.phone)return vills[i];}
@@ -733,10 +733,10 @@ function renderPage() {
           scenery: window._villageScenery || [],
           createTime: Date.now()
         });
-        toast('村庄创建成功！');
+        toast('村��创建成功！');
       } else {
         var r = getMyVillage();
-        if (!r) { toast('未找到��庄'); return; }
+        if (!r) { toast('未找到村庄'); return; }
         var idx = r.index;
         villages[idx].name = name;
         villages[idx].province = document.getElementById('vf_province').value.trim();
@@ -1615,7 +1615,7 @@ function auditFood() {
     apps.forEach(function(f) {
       html += '<div style="background:white;padding:12px;border-radius:8px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,0.1);">' +
         '<div style="font-weight:bold;">' + f.name + '</div>' +
-        '<div style="color:#999;font-size:11px;margin-top:4px;">���请人: ' + f.sellerName + '</div>' +
+        '<div style="color:#999;font-size:11px;margin-top:4px;">申请人: ' + f.sellerName + '</div>' +
         '<div style="display:flex;gap:10px;margin-top:10px;">' +
           '<button onclick="approveFood(' + f.id + ')" style="flex:1;padding:8px;background:#4CAF50;color:white;border:none;border-radius:4px;">通过</button>' +
           '<button onclick="rejectFood(' + f.id + ')" style="flex:1;padding:8px;background:#F44336;color:white;border:none;border-radius:4px;">拒绝</button>' +
@@ -2627,7 +2627,7 @@ window.auditCamps = function() {
       Storage.set('accounts', accounts);
       document.getElementById('editContactModal').style.display = 'none';
       toast('保存成功！');
-      renderPage(); // 重新渲染页面显示新信息
+      renderPage(); // 重新渲���页面显示新信息
     }
     // 页面初始化
     function init() {
