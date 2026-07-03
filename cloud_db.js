@@ -5,6 +5,16 @@ var SUPABASE_URL = 'https://eivqbbxyllsorbvgqsju.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpdnFiYnh5bGxzb3Jidmdxc2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MTIzMDksImV4cCI6MjA5ODI4ODMwOX0.QeKnbo1cgA0yGMOEydML3PNXatH1V1QXfW0hyxRy7KY';
 var ROW_ID = 'init';
 
+// 兼容 profile.html 和其他页面的旧 API 调用
+var CloudDB = {
+  loadFromPublic: function() { return cloudLoad(); },
+  addRegistration: cloudAddRegistration,
+  updateRegistration: cloudUpdateRegistration,
+  approveRegistration: cloudApproveRegistration,
+  saveAll: cloudSave,
+  loadAll: cloudLoad
+};
+
 function cloudReq(method, path, body) {
   return new Promise(function(resolve, reject) {
     var xhr = new XMLHttpRequest();
