@@ -1,0 +1,201 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>卖家订单管理</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;background:#f5f5f5;color:#333;font-size:14px}
+.header{position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#2E7D32,#4CAF50);color:#fff;padding:12px 16px;z-index:100;display:flex;align-items:center}
+.header-back{font-size:20px;cursor:pointer;padding-right:12px}
+.header-title{font-size:18px;font-weight:bold}
+.container{padding:60px 16px 80px;max-width:750px;margin:0 auto}
+.tab-box{display:flex;background:#fff;position:sticky;top:48px;z-index:50;border-bottom:1px solid #e0e0e0}
+.tab-item{flex:1;text-align:center;padding:10px 0;font-size:14px;color:#666;cursor:pointer;position:relative}
+.tab-item.active{color:#2E7D32;font-weight:600}
+.tab-item.active::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:40px;height:3px;background:#2E7D32;border-radius:2px}
+.order-card{background:#fff;border-radius:10px;padding:12px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.order-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.order-id{font-size:12px;color:#999}
+.order-status{padding:2px 8px;border-radius:4px;font-size:12px;font-weight:500}
+.s0{background:#fff3e0;color:#FF9800}
+.s1{background:#e8f5e9;color:#2E7D32}
+.s2{background:#e3f2fd;color:#1976D2}
+.s3{background:#f5f5f5;color:#999}
+.order-info{font-size:13px;color:#666;line-height:1.6;margin-bottom:8px}
+.order-actions{display:flex;gap:8px;margin-top:8px}
+.btn-action{padding:6px 14px;border-radius:6px;font-size:13px;cursor:pointer;border:1px solid #e0e0e0;background:#fff;color:#333}
+.btn-action.primary{background:#2E7D32;color:#fff;border-color:#2E7D32}
+.btn-detail{padding:6px 14px;border-radius:6px;font-size:13px;cursor:pointer;border:1px solid #2E7D32;background:#e8f5e9;color:#2E7D32}
+.empty{text-align:center;padding:60px 0;color:#999}
+.empty-icon{font-size:48px;margin-bottom:12px}
+.modal-mask{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.modal-box{background:#fff;border-radius:14px 14px 0 0;width:100%;max-width:500px;max-height:85vh;overflow-y:auto;padding:20px 16px 30px;animation:slideUp .25s}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-title{font-size:18px;font-weight:bold;margin-bottom:16px;text-align:center}
+.modal-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.modal-label{color:#666;font-size:13px}
+.modal-val{font-size:14px;font-weight:500;max-width:60%;text-align:right;word-break:break-all}
+.modal-val.phone{color:#2E7D32;cursor:pointer}
+.modal-section{font-size:13px;color:#999;margin:12px 0 6px;font-weight:600}
+.modal-close{width:100%;padding:12px;background:#f5f5f5;border:none;border-radius:8px;font-size:15px;cursor:pointer;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="header">
+  <span class="header-back" onclick="history.back()">←</span>
+  <span class="header-title">卖家订单</span>
+</div>
+<div class="tab-box">
+  <div class="tab-item active" onclick="switchTab(0,this)">待发货</div>
+  <div class="tab-item" onclick="switchTab(1,this)">已发货</div>
+  <div class="tab-item" onclick="switchTab(2,this)">已完成</div>
+  <div class="tab-item" onclick="switchTab(3,this)">已取消</div>
+</div>
+<div class="container" id="list"></div>
+<div id="modalRoot"></div>
+<script src="app.js"></script>
+<script>
+var statusList=['待发货','已发货','已完成','已取消'];
+var statusClass=['s0','s1','s2','s3'];
+var currentTab=0;
+
+function init(){
+  var user=Storage.get('user',null);
+  if(!user){alert('请先登录');location.href='login.html';return;}
+  loadOrders();
+}
+
+function switchTab(idx,el){
+  currentTab=idx;
+  var tabs=document.querySelectorAll('.tab-item');
+  for(var i=0;i<tabs.length;i++)tabs[i].classList.remove('active');
+  el.classList.add('active');
+  loadOrders();
+}
+
+function loadOrders(){
+  var user=Storage.get('user',null);
+  var orders=Storage.get('orders',[]);
+  var list=document.getElementById('list');
+  list.innerHTML='';
+
+  var myOrders=[];
+  for(var i=0;i<orders.length;i++){
+    if(orders[i].sellerId===user.account || orders[i].sellerId===user.id){
+      myOrders.push(orders[i]);
+    }
+  }
+
+  var filtered=[];
+  var targetStatus=statusList[currentTab];
+  for(var j=0;j<myOrders.length;j++){
+    if(myOrders[j].status===targetStatus)filtered.push(myOrders[j]);
+  }
+
+  if(filtered.length===0){
+    list.innerHTML='<div class="empty"><div class="empty-icon">📦</div><div>暂无'+targetStatus+'订单</div></div>';
+    return;
+  }
+
+  for(var k=0;k<filtered.length;k++){
+    var o=filtered[k];
+    var sc=statusClass[currentTab];
+    var actions='';
+    if(o.status==='待发货'){
+      actions='<button class="btn-action primary" onclick="shipOrder(\''+o.id+'\')">发货</button>'+
+              '<button class="btn-action" onclick="cancelOrder(\''+o.id+'\')">取消</button>';
+    } else if(o.status==='已发货'){
+      actions='<span style="font-size:12px;color:#2E7D32">等待买家确认收货</span>';
+    }
+
+    var card=document.createElement('div');
+    card.className='order-card';
+    card.innerHTML=
+      '<div class="order-header">'+
+        '<span class="order-id">订单号：'+o.id+'</span>'+
+        '<span class="order-status '+sc+'">'+o.status+'</span>'+
+      '</div>'+
+      '<div class="order-info">'+
+        (o.productName||o.foodName||o.campName||'商品')+' × '+o.qty+' = ¥'+o.total+'<br>'+
+        '下单时间：'+new Date(o.createTime).toLocaleString()+
+      '</div>'+
+      '<div class="order-actions">'+
+        '<button class="btn-detail" onclick="showDetail(\''+o.id+'\')">📋 查看详情</button>'+
+        actions+
+      '</div>';
+    list.appendChild(card);
+  }
+}
+
+function showDetail(orderId){
+  var orders=Storage.get('orders',[]);
+  var o=null;
+  for(var i=0;i<orders.length;i++){if(orders[i].id===orderId){o=orders[i];break;}}
+  if(!o)return;
+
+  var phone=o.buyerPhone||o.phone||'未填写';
+  var addr=o.buyerAddr||o.address||'未填写';
+  var name=o.buyerName||o.name||'未填写';
+
+  var html='<div class="modal-mask" onclick="closeModal(event)">'+
+    '<div class="modal-box" onclick="event.stopPropagation()">'+
+      '<div class="modal-title">订单详情</div>'+
+      '<div class="modal-section">🛒 商品信息</div>'+
+      '<div class="modal-row"><span class="modal-label">商品名称</span><span class="modal-val">'+(o.productName||o.foodName||o.campName||'商品')+'</span></div>'+
+      '<div class="modal-row"><span class="modal-label">数量</span><span class="modal-val">'+o.qty+'</span></div>'+
+      '<div class="modal-row"><span class="modal-label">金额</span><span class="modal-val" style="color:#FF9800">¥'+o.total+'</span></div>'+
+      '<div class="modal-row"><span class="modal-label">订单状态</span><span class="modal-val">'+o.status+'</span></div>'+
+      (o.remark||o.note?'<div class="modal-row"><span class="modal-label">备注</span><span class="modal-val">'+(o.remark||o.note)+'</span></div>':'')+
+      '<div class="modal-section">👤 买家信息</div>'+
+      '<div class="modal-row"><span class="modal-label">姓名</span><span class="modal-val">'+name+'</span></div>'+
+      '<div class="modal-row"><span class="modal-label">电话</span><span class="modal-val phone" onclick="callPhone(\''+phone+'\')">'+phone+' 📞</span></div>'+
+      '<div class="modal-row"><span class="modal-label">地址</span><span class="modal-val">'+addr+'</span></div>'+
+      (o.pickupTime?'<div class="modal-row"><span class="modal-label">取餐时间</span><span class="modal-val">'+o.pickupTime+'</span></div>':'')+
+      (o.checkin?'<div class="modal-row"><span class="modal-label">入住日期</span><span class="modal-val">'+o.checkin+'</span></div>':'')+
+      '<div class="modal-section">📅 订单时间</div>'+
+      '<div class="modal-row"><span class="modal-label">下单时间</span><span class="modal-val">'+new Date(o.createTime).toLocaleString()+'</span></div>'+
+      '<button class="modal-close" onclick="closeModal()">关闭</button>'+
+    '</div></div>';
+
+  document.getElementById('modalRoot').innerHTML=html;
+}
+
+function callPhone(phone){
+  if(phone && phone!=='未填写'){
+    location.href='tel:'+phone;
+  }
+}
+
+function closeModal(e){
+  if(e && e.target!==e.currentTarget)return;
+  document.getElementById('modalRoot').innerHTML='';
+}
+
+function shipOrder(orderId){
+  if(!confirm('确认已发货？'))return;
+  var orders=Storage.get('orders',[]);
+  for(var i=0;i<orders.length;i++){
+    if(orders[i].id===orderId){orders[i].status='已发货';break;}
+  }
+  Storage.set('orders',orders);
+  toast('已标记为已发货');
+  loadOrders();
+}
+
+function cancelOrder(orderId){
+  if(!confirm('确认取消此订单？'))return;
+  var orders=Storage.get('orders',[]);
+  for(var i=0;i<orders.length;i++){
+    if(orders[i].id===orderId){orders[i].status='已取消';break;}
+  }
+  Storage.set('orders',orders);
+  toast('订单已取消');
+  loadOrders();
+}
+
+init();
+</script>
+</body>
+</html>
