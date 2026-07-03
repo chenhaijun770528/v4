@@ -117,28 +117,15 @@ function renderLogin() {
 }
 
 window.doLogin = function() {
-  var u = document.getElementById('user').value.trim();
-  var p = document.getElementById('pwd').value.trim();
-  if (!u || !p) { alert('请输入账号和密码'); return; }
-  // 先从云端加载数据
-  loadFromCloud(function() {
-    // 方式1: 从云端账号验证
-    var accounts = cloudData.accounts || [];
-    var found = accounts.find(function(a) {
-      return (a.username === u || a.id === u || a.phone === u) && a.password === p && a.role === '管理员';
-    });
-    // 方式2: 备选兼容本地账号
-    if (!found && u === ADMIN_USER && p === ADMIN_PWD) {
-      found = true;
-    }
-    if (found) {
-      isLogin = true;
-      sessionStorage.setItem('village_admin_logged', 'true');
-      renderAdmin();
-    } else {
-      alert('账号或密码错误\n\n提示：admin / admin123');
-    }
-  });
+  var u = document.getElementById('user').value;
+  var p = document.getElementById('pwd').value;
+  if (u === ADMIN_USER && p === ADMIN_PWD) {
+    isLogin = true;
+    sessionStorage.setItem('village_admin_logged', 'true');
+    loadFromCloud(function() { renderAdmin(); });
+  } else {
+    alert('账号或密码错误');
+  }
 };
 
 // ====== 渲染管理界面 ======
@@ -392,7 +379,7 @@ window.deleteRegistration = function(id) {
 };
 
 window.deleteVillage = function(idOrName) {
-  if (!confirm('确定删除此村庄？此操作不可恢复！')) return;
+  if (!confirm('确定删除此村庄？此操作不可恢复��')) return;
   var success = false;
   if (cloudData.villages) {
     var newList = [];
