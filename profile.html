@@ -362,13 +362,13 @@ function renderPage() {
               var regs = cloudData.registrations || [];
               var myInfo = null;
               for (var ai = 0; ai < accounts.length; ai++) {
-                if (accounts[ai].phone === currentUser.phone || accounts[ai].id === currentUser.id) {
+                if (accounts[ai].phone === currentUser.phone || accounts[ai].id === currentUser.id || accounts[ai].username === currentUser.username || accounts[ai].username === currentUser.id || accounts[ai].id === currentUser.username) {
                   myInfo = accounts[ai]; break;
                 }
               }
               if (!myInfo) {
                 for (var ri = 0; ri < regs.length; ri++) {
-                  if ((regs[ri].phone === currentUser.phone || regs[ri].account === currentUser.account) && regs[ri].status === '已通过') {
+                  if ((regs[ri].phone === currentUser.phone || regs[ri].account === currentUser.account || regs[ri].account === currentUser.username || regs[ri].account === currentUser.id) && regs[ri].status === '已通过') {
                     myInfo = { role: regs[ri].role }; break;
                   }
                 }
