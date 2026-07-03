@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>乡村露营</title>
+  <style>
+    /* (保留原有CSS样式，这里省略以节省空间) */
+  </style>
+</head>
+<body>
+  <!-- (保留原有HTML结构，这里省略以节省空间) -->
+  
+  <script>
+    // ===== 多图片上传逻辑 =====
+    var _campImages = [];  // 存储多张图片的数组
+    
+    // 图片上传按钮点击
+    document.getElementById('applyImgUpload').addEventListener('change', function(e) {
+      var files = e.target.files;
+      if (!files || files.length === 0) return;
+      
+      // 限制最多6张图片
+      var remaining = 6 - _campImages.length;
+      if (remaining <= 0) {
+        toast('最多上传6张图片');
+        return;
+      }
+      
+      var filesToProcess = Array.from(files).slice(0, remaining);
+      var processed = 0;
+      
+      filesToProcess.forEach(function(file) {
+        compressImage(file, 800, 600, 0.7, function(dataUrl) {
+          _campImages.push(dataUrl);
+          processed++;
+          
+          if (processed === filesToProcess.length) {
+            renderCampImagePreview();
+            toast('已添加 ' + processed + ' 张图片');
+          }
+        });
+      });
+    });
+    
+    // 渲染图片预览
+    function renderCampImagePreview() {
+      var preview = document.getElementById('applyImgPreview');
+      preview.innerHTML = '';
+      
+      _campImages.forEach(function(imgData, idx) {
+        var imgContainer = document.createElement('div');
+        imgContainer.style.cssText = 'display:inline-block;position:relative;margin:5px;';
+        
+        var img = document.createElement('img');
+        img.src = imgData;
+        img.style.cssText = 'width:80px;height:80px;object-fit:cover;border-radius:6px;';
+        
+        var deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '×';
+        deleteBtn.style.cssText = 'position:absolute;top:-5px;right:-5px;width:20px;height:20px;border-radius:50%;background:#F44336;color:white;border:none;font-size:12px;';
+        deleteBtn.onclick = function() {
+          _campImages.splice(idx, 1);
+          renderCampImagePreview();
+        };
+        
+        imgContainer.appendChild(img);
+        imgContainer.appendChild(deleteBtn);
+        preview.appendChild(imgContainer);
+      });
+    }
+    
+    // 提交申请（修改）
+    function submitApplication() {
+      // ... (保留原有验证逻辑)
+      
+      if (editId) {
+        // 编辑模式
+        for (var ei = 0; ei < apps.length; ei++) {
+          if (apps[ei].id === editId) {
+            // ... (保留其他字段更新)
+            apps[ei].imgs = _campImages.length > 0 ? _campImages : (apps[ei].imgs || []);
+            // ... 
+            break;
+          }
+        }
+      } else {
+        // 新建模式
+        var newApp = {
+          // ... (保留其他字段)
+          imgs: _campImages,  // 多图片数组
+          img: _campImages.length > 0 ? _campImages[0] : '',  // 兼容旧代码：第一张作为封面
+          // ...
+        };
+        apps.push(newApp);
+      }
+      
+      Storage.set('camp_applications', apps);
+      closeApplyModal();
+    }
+    
+    // ... (保留其他函数)
+  </script>
+</body>
+</html>
