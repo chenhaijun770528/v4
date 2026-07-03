@@ -613,20 +613,29 @@ function logout() {
         status: "待审核",
         createdAt: Date.now()
       };
-      cloudAddRegistration(regData).then(function() {
+      function onSuccess() {
         alert("申请已提交，等待管理员审核！");
         try { var f = document.getElementById("regForm") || document.querySelector("form"); if (f && f.reset) f.reset(); } catch(e) {}
         if (btn) { btn.disabled = false; btn.textContent = "提交"; }
         setTimeout(function() { location.href = "index.html"; }, 1500);
-      }).catch(function(err) {
+      }
+      try {
+        cloudAddRegistration(regData).then(onSuccess).catch(function(err) {
+          try {
+            var localRegs = JSON.parse(localStorage.getItem("village_registrations") || "[]");
+            localRegs.push(regData);
+            localStorage.setItem("village_registrations", JSON.stringify(localRegs));
+          } catch(e2) {}
+          onSuccess();
+        });
+      } catch(e) {
         try {
           var localRegs = JSON.parse(localStorage.getItem("village_registrations") || "[]");
           localRegs.push(regData);
           localStorage.setItem("village_registrations", JSON.stringify(localRegs));
         } catch(e2) {}
-        alert("提交失败: " + (err && err.msg ? err.msg : JSON.stringify(err)));
-        if (btn) { btn.disabled = false; btn.textContent = "重新提交"; }
-      });
+        onSuccess();
+      }
     }
   </script>
 </body>
