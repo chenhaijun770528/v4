@@ -117,15 +117,28 @@ function renderLogin() {
 }
 
 window.doLogin = function() {
-  var u = document.getElementById('user').value;
-  var p = document.getElementById('pwd').value;
-  if (u === ADMIN_USER && p === ADMIN_PWD) {
-    isLogin = true;
-    sessionStorage.setItem('village_admin_logged', 'true');
-    loadFromCloud(function() { renderAdmin(); });
-  } else {
-    alert('账号或密码错误');
-  }
+  var u = document.getElementById('user').value.trim();
+  var p = document.getElementById('pwd').value.trim();
+  if (!u || !p) { alert('请输入账号和密码'); return; }
+  // 先从云端加载数据
+  loadFromCloud(function() {
+    // 方式1: 从云端账号验证
+    var accounts = cloudData.accounts || [];
+    var found = accounts.find(function(a) {
+      return (a.username === u || a.id === u || a.phone === u) && a.password === p && a.role === '管理员';
+    });
+    // 方式2: 备选兼容本地账号
+    if (!found && u === ADMIN_USER && p === ADMIN_PWD) {
+      found = true;
+    }
+    if (found) {
+      isLogin = true;
+      sessionStorage.setItem('village_admin_logged', 'true');
+      renderAdmin();
+    } else {
+      alert('账号或密码错误\n\n提示：admin / admin123');
+    }
+  });
 };
 
 // ====== 渲染管理界面 ======
@@ -258,10 +271,14 @@ window.switchTab = function(tab) { curTab = tab; renderAdmin(); };
 window.doApprove = function(id) {
   if (!id) return;
   var updated = false;
+  var approvedRole = null;   // 新增：记录审核通过的角色
+  var approvedPhone = null; // 新增：记录用户手机号
   if (cloudData.registrations) {
     for (var i = 0; i < cloudData.registrations.length; i++) {
       if (cloudData.registrations[i].id == id) {
         cloudData.registrations[i].status = '已通过';
+        approvedRole = cloudData.registrations[i].role || cloudData.registrations[i].type || '';
+        approvedPhone = cloudData.registrations[i].phone || '';
         // 同步到村庄
         if ((cloudData.registrations[i].role || cloudData.registrations[i].type) === '村主任') {
           if (!cloudData.villages) cloudData.villages = [];
@@ -280,7 +297,25 @@ window.doApprove = function(id) {
             });
           }
         }
-        updated = true; break;
+        updated = true;
+        // 关键修复：同步更新用户账号中的角色
+        if (approvedPhone && approvedRole) {
+          if (!cloudData.accounts) cloudData.accounts = [];
+          var userIdx = -1;
+          for (var a = 0; a < cloudData.accounts.length; a++) {
+            if (cloudData.accounts[a].phone === approvedPhone || cloudData.accounts[a].id === cloudData.registrations[i].accountId) {
+              userIdx = a; break;
+            }
+          }
+          if (userIdx >= 0) {
+            cloudData.accounts[userIdx].currentRole = approvedRole;
+            cloudData.accounts[userIdx].role = approvedRole;  // 同时更新 role 字段（profile.html 读这个）
+            console.log('[审核] 已更新账号角色：', cloudData.accounts[userIdx].username || cloudData.accounts[userIdx].phone, '→', approvedRole);
+          } else {
+            console.warn('[审核] 未找到对应账号，phone=' + approvedPhone);
+          }
+        }
+        break;
       }
     }
   }
@@ -292,10 +327,13 @@ window.doApprove = function(id) {
   } else {
     S.set('registrations', cloudData.registrations);
     if (cloudData.villages) S.set('villages', cloudData.villages);
-    saveToCloud();
+    if (cloudData.accounts) S.set('accounts', cloudData.accounts);
+    saveToCloud(function(ok){
+      console.log('[审核] 云端保存结果：', ok ? '成功' : '失败');
+    });
   }
   renderAdmin();
-  alert('已通过');
+  alert('已通过！\n\n用户账号已同步更新角色：' + (approvedRole||'') + '\n\n用户重新登录后即可生效。');
 };
 
 window.doReject = function(id) {
