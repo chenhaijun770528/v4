@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的收藏</title>
+  <style>/* village-h5 全局样式 */
+/* 主题色：绿色乡土风格 #2E7D32 */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background-color: #f5f5f5;
+  color: #333;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 顶部导航 */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #2E7D32, #4CAF50);
+  color: white;
+  padding: 12px 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.header-title { font-size: 18px; font-weight: bold; }
+.header-back { font-size: 20px; cursor: pointer; padding: 4px 8px; }
+
+/* 主容器 */
+.container {
+  padding: 60px 16px 80px;
+  max-width: 750px;
+  margin: 0 auto;
+}
+
+/* 搜索栏 */
+.search-bar {
+  background: white;
+  border-radius: 25px;
+  padding: 10px 16px;
+  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  cursor: pointer;
+}
+
+.search-bar input {
+  border: none;
+  outline: none;
+  flex: 1;
+  font-size: 14px;
+  background: transparent;
+}
+
+/* 轮播图 */
+.banner-swiper {
+  border-radius: 12px;
+  overflow: hidden;
+  height: 180px;
+  margin-bottom: 16px;
+}
+
+.banner-swiper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 功能入口网格 */
+.func-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.func-item {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 8px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  transition: transform 0.2s;
+}
+
+.func-item:active { transform: scale(0.95); }
+.func-icon { font-size: 28px; display: block; margin-bottom: 4px; }
+.func-text { font-size: 12px; color: #666; }
+
+/* 村庄卡片 */
+.section-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.village-count { font-size: 12px; color: #999; font-weight: normal; }
+
+.village-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.village-card:active { transform: scale(0.98); }
+
+.village-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.village-name { font-size: 16px; font-weight: bold; color: #2E7D32; }
+.village-location { font-size: 12px; color: #999; margin-top: 2px; }
+.village-population { text-align: right; }
+.population-number { font-size: 20px; font-weight: bold; color: #FF9800; }
+.population-label { font-size: 11px; color: #999; }
+
+.village-stats {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 8px;
+}
+
+.stat-item { flex: 1; display: flex; align-items: center; gap: 6px; }
+.stat-icon { font-size: 18px; }
+.stat-value { font-size: 14px; font-weight: bold; color: #333; }
+.stat-label { font-size: 11px; color: #999; }
+
+.village-desc {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.village-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  flex: 1;
+  background: #f0f7f0;
+  color: #2E7D32;
+  border-radius: 20px;
+  padding: 6px 0;
+  text-align: center;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.action-btn:active { background: #2E7D32; color: white; }
+
+/* 底部导航 */
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  display: flex;
+  justify-content: space-around;
+  padding: 8px 0;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+  z-index: 100;
+}
+
+.tab-item {
+  text-align: center;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.tab-icon { font-size: 24px; display: block; }
+.tab-text { font-size: 11px; color: #999; margin-top: 2px; }
+.tab-item.active .tab-text { color: #2E7D32; }
+
+/* 表单样式 */
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 14px; color: #666; margin-bottom: 6px; display: block; }
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus { border-color: #2E7D32; }
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: #2E7D32;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.btn-primary:active { background: #1B5E20; }
+
+/* 卡片详情页 */
+.detail-header { margin-bottom: 20px; }
+.detail-title { font-size: 22px; font-weight: bold; color: #2E7D32; margin-bottom: 8px; }
+.detail-meta { font-size: 12px; color: #999; }
+
+.detail-section {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.detail-section h3 { font-size: 15px; color: #2E7D32; margin-bottom: 10px; }
+.detail-section p { font-size: 14px; color: #666; line-height: 1.8; }
+
+/* 图片网格 */
+.img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.img-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; }
+
+/* 空状态 */
+.empty-state { text-align: center; padding: 60px 20px; color: #999; }
+.empty-icon { font-size: 48px; display: block; margin-bottom: 12px; }
+
+/* Toast提示 */
+.toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 9999;
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+
+/* 加载状态 */
+.loading { text-align: center; padding: 20px; color: #999; }
+
+/* 角色选择页 */
+.role-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.role-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px 16px;
+  text-align: center;
+  cursor: pointer;
+  border: 2px solid #e0e0e0;
+  transition: all 0.2s;
+}
+
+.role-card.selected { border-color: #2E7D32; background: #f0f7f0; }
+.role-icon { font-size: 36px; display: block; margin-bottom: 8px; }
+.role-name { font-size: 14px; font-weight: bold; color: #333; }
+
+/* 农产品卡片 */
+.product-card { background: white; border-radius: 12px; overflow: hidden; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; }
+.product-card:active { transform: scale(0.98); }
+.product-img { width: 100%; height: 160px; object-fit: cover; }
+.product-info { padding: 12px; }
+.product-name { font-size: 15px; font-weight: bold; color: #333; margin-bottom: 4px; }
+.product-price { font-size: 18px; color: #FF9800; font-weight: bold; }
+.product-unit { font-size: 12px; color: #999; font-weight: normal; }
+
+/* 商品列表 */
+.goods-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.goods-card { background: white; border-radius: 8px; overflow: hidden; }
+.goods-img { width: 100%; height: 120px; object-fit: cover; }
+.goods-info { padding: 8px; }
+.goods-name { font-size: 13px; color: #333; margin-bottom: 4px; }
+.goods-price { font-size: 16px; color: #FF9800; font-weight: bold; }
+.goods-btn { background: #2E7D32; color: white; border: none; width: 100%; padding: 6px; border-radius: 4px; font-size: 12px; cursor: pointer; margin-top: 6px; }
+
+/* 露营页面 */
+.camp-card { background: white; border-radius: 12px; overflow: hidden; margin-bottom: 12px; }
+.camp-img { width: 100%; height: 180px; object-fit: cover; }
+.camp-info { padding: 12px; }
+.camp-name { font-size: 15px; font-weight: bold; margin-bottom: 4px; }
+.camp-desc { font-size: 12px; color: #666; margin-bottom: 8px; }
+.camp-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.camp-tag { background: #f0f7f0; color: #2E7D32; padding: 2px 8px; border-radius: 10px; font-size: 11px; }
+
+/* 我的页面 */
+.profile-header {
+  background: linear-gradient(135deg, #2E7D32, #4CAF50);
+  color: white;
+  padding: 30px 16px;
+  text-align: center;
+}
+
+.avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); font-size: 36px; line-height: 70px; background: rgba(255,255,255,0.2); margin: 0 auto 10px; }
+.nickname { font-size: 18px; font-weight: bold; }
+
+.profile-stats { display: flex; justify-content: space-around; padding: 16px; background: white; margin-bottom: 12px; border-radius: 12px; }
+.profile-stat { text-align: center; }
+.profile-stat-num { font-size: 18px; font-weight: bold; color: #2E7D32; }
+.profile-stat-label { font-size: 11px; color: #999; }
+
+.menu-list { background: white; border-radius: 12px; overflow: hidden; }
+.menu-item { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+.menu-item:last-child { border-bottom: none; }
+.menu-item-left { display: flex; align-items: center; gap: 10px; }
+.menu-icon { font-size: 20px; }
+.menu-name { font-size: 14px; color: #333; }
+.menu-arrow { color: #ccc; font-size: 16px; }
+
+/* 收藏/历史/点评列表 */
+.list-card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; gap: 12px; cursor: pointer; }
+.list-thumb { width: 80px; height: 80px; border-radius: 8px; object-fit: cover; flex-shrink: 0; }
+.list-info { flex: 1; }
+.list-title { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 4px; }
+.list-meta { font-size: 12px; color: #999; }
+
+/* 评论区 */
+.comment-item { padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.comment-user { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.comment-avatar { width: 32px; height: 32px; border-radius: 50%; background: #e0e0e0; font-size: 16px; text-align: center; line-height: 32px; }
+.comment-name { font-size: 13px; font-weight: bold; color: #333; }
+.comment-text { font-size: 13px; color: #555; line-height: 1.6; }
+.comment-time { font-size: 11px; color: #bbb; margin-top: 4px; }
+
+/* 留言板 */
+.message-board { background: white; border-radius: 12px; padding: 16px; }
+.message-input-wrap { display: flex; gap: 8px; margin-bottom: 16px; }
+.message-input { flex: 1; padding: 10px; border: 1px solid #e0e0e0; border-radius: 20px; outline: none; font-size: 13px; }
+.message-send { background: #2E7D32; color: white; border: none; padding: 8px 16px; border-radius: 20px; font-size: 13px; cursor: pointer; }
+
+/* 点赞 */
+.like-btn { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #999; cursor: pointer; }
+.like-btn.liked { color: #FF6B6B; }
+.like-icon { font-size: 16px; }
+
+/* 分享弹窗 */
+.share-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: flex-end; }
+.share-modal.show { display: flex; }
+.share-panel { background: white; width: 100%; padding: 20px; border-radius: 16px 16px 0 0; }
+.share-title { text-align: center; font-size: 14px; color: #666; margin-bottom: 16px; }
+.share-icons { display: flex; justify-content: space-around; }
+.share-icon-item { text-align: center; cursor: pointer; }
+.share-icon-item span { font-size: 40px; display: block; margin-bottom: 6px; }
+.share-icon-item small { font-size: 12px; color: #666; }
+.share-close { margin-top: 12px; text-align: center; color: #999; padding: 10px; cursor: pointer; }
+
+/* 加载更多 */
+.load-more { text-align: center; padding: 16px; color: #999; font-size: 13px; cursor: pointer; }
+
+/* 页面切换动画 */
+.page { display: none; }
+.page.active { display: block; animation: fadeIn 0.2s; }
+
+/* 表单页面 */
+.form-page { padding: 20px 16px; }
+.form-card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.form-row { display: flex; align-items: center; padding: 12px 0; border-bottom: 1px solid #f0f0f0; }
+.form-row:last-child { border-bottom: none; }
+.form-row-label { width: 100px; font-size: 14px; color: #666; flex-shrink: 0; }
+.form-row-value { flex: 1; font-size: 14px; color: #333; }
+
+/* 响应式 */
+@media (max-width: 375px) {
+  .func-grid { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .func-item { padding: 12px 4px; }
+  .func-text { font-size: 11px; }
+}</style>
+</head>
+<body>
+  <div class="header">
+    <span class="header-back" onclick="history.back()">←</span>
+    <span class="header-title">⭐ 我的收藏</span>
+    <span style="width:40px"></span>
+  </div>
+  <div class="container" id="content"></div>
+
+  <div class="tab-bar">
+    <div class="tab-item" onclick="goPage('index.html')"><span class="tab-icon">🏠</span><span class="tab-text">首页</span></div>
+    <div class="tab-item" onclick="goPage('register.html')"><span class="tab-icon">📝</span><span class="tab-text">注册</span></div>
+    <div class="tab-item" onclick="goPage('profile.html')"><span class="tab-icon">👤</span><span class="tab-text">我的</span></div>
+  </div>
+
+  <script>// village-h5 数据层
+// 模拟数据（后续可替换为真实API）
+
+const DB = {
+  // 村庄数据
+  villages: [
+    {
+      id: 'v1',
+      name: '幸福村',
+      province: '江苏省',
+      city: '苏州市',
+      population: '3280',
+      totalArea: '4500',
+      farmlandArea: '2800',
+      commercialArea: '200',
+      description: '幸福村位于苏州市郊区，环境优美，基础设施完善，是著名的生态农业示范村。村内有千年古银杏树、多彩田园，是周末休闲的好去处。',
+      chief: { name: '张建国', phone: '13800138001' },
+      scenery: [
+        { id: 's1', title: '千年古银杏', desc: '树龄超过800年，树高25米，胸围6米', img: 'https://picsum.photos/seed/scene1/400/300' },
+        { id: 's2', title: '多彩田园', desc: '四季变换的稻田画，色彩斑斓', img: 'https://picsum.photos/seed/scene2/400/300' },
+        { id: 's3', title: '荷塘月色', desc: '夏季荷花盛开，清香四溢', img: 'https://picsum.photos/seed/scene3/400/300' }
+      ],
+      food: [
+        { id: 'f1', name: '农家土鸡', price: '98', unit: '只', desc: '散养土鸡，肉质鲜嫩', img: 'https://picsum.photos/seed/food1/400/300' },
+        { id: 'f2', name: '新鲜虾仁', price: '58', unit: '斤', desc: '本地河虾，当日捕捞', img: 'https://picsum.photos/seed/food2/400/300' },
+        { id: 'f3', name: '手工年糕', price: '25', unit: '斤', desc: '传统工艺，口感软糯', img: 'https://picsum.photos/seed/food3/400/300' }
+      ],
+      images: ['https://picsum.photos/seed/v1a/400/300', 'https://picsum.photos/seed/v1b/400/300', 'https://picsum.photos/seed/v1c/400/300']
+    },
+    {
+      id: 'v2',
+      name: '阳光村',
+      province: '广东省',
+      city: '广州市',
+      population: '4560',
+      totalArea: '6200',
+      farmlandArea: '3500',
+      commercialArea: '350',
+      description: '阳光村是广州市郊的现代化农村，积极发展乡村旅游和生态农业。村内有大型草莓采摘园、农家乐设施，是城市居民周末体验田园生活的好选择。',
+      chief: { name: '李明华', phone: '13800138002' },
+      scenery: [
+        { id: 's4', title: '草莓采摘园', desc: '50亩有机草莓，个大味甜', img: 'https://picsum.photos/seed/scene4/400/300' },
+        { id: 's5', title: '阳光花海', desc: '百亩花田，四季花开', img: 'https://picsum.photos/seed/scene5/400/300' }
+      ],
+      food: [
+        { id: 'f4', name: '有机草莓', price: '35', unit: '斤', desc: '有机种植，个大香甜', img: 'https://picsum.photos/seed/food4/400/300' },
+        { id: 'f5', name: '客家酿豆腐', price: '38', unit: '份', desc: '传统客家美食', img: 'https://picsum.photos/seed/food5/400/300' }
+      ],
+      images: ['https://picsum.photos/seed/v2a/400/300', 'https://picsum.photos/seed/v2b/400/300']
+    },
+    {
+      id: 'v3',
+      name: '青山村',
+      province: '湖南省',
+      city: '长沙市',
+      population: '2150',
+      totalArea: '3800',
+      farmlandArea: '1800',
+      commercialArea: '150',
+      description: '青山村坐落于长株潭后花园，森林覆盖率超过70%，空气清新，是天然的氧吧。村内有古民居、古井等历史遗迹，适合徒步探险和研学旅行。',
+      chief: { name: '王志强', phone: '13800138003' },
+      scenery: [
+        { id: 's6', title: '古民居群', desc: '保存完好的明清古建筑', img: 'https://picsum.photos/seed/scene6/400/300' },
+        { id: 's7', title: '千年古井', desc: '井水清澈，冬暖夏凉', img: 'https://picsum.photos/seed/scene7/400/300' },
+        { id: 's8', title: '竹林氧吧', desc: '百亩竹林，呼吸自然', img: 'https://picsum.photos/seed/scene8/400/300' }
+      ],
+      food: [
+        { id: 'f6', name: '竹林土鸡', price: '108', unit: '只', desc: '竹林散养，营养丰富', img: 'https://picsum.photos/seed/food6/400/300' },
+        { id: 'f7', name: '手工竹笋干', price: '45', unit: '斤', desc: '春季竹笋，自然晾晒', img: 'https://picsum.photos/seed/food7/400/300' }
+      ],
+      images: ['https://picsum.photos/seed/v3a/400/300', 'https://picsum.photos/seed/v3b/400/300', 'https://picsum.photos/seed/v3c/400/300']
+    }
+  ],
+
+  // 农产品
+  products: [
+    { id: 'p1', name: '有机大米', price: '68', unit: '袋/10斤', desc: '绿色有机种植，口感香糯', img: 'https://picsum.photos/seed/prod1/400/300', sales: 328 },
+    { id: 'p2', name: '土鸡蛋', price: '45', unit: '盒/30枚', desc: '散养土鸡，蛋黄饱满', img: 'https://picsum.photos/seed/prod2/400/300', sales: 256 },
+    { id: 'p3', name: '新鲜蜂蜜', price: '88', unit: '瓶/500g', desc: '深山百花蜜，纯天然', img: 'https://picsum.photos/seed/prod3/400/300', sales: 189 },
+    { id: 'p4', name: '农家菜籽油', price: '58', unit: '瓶/2L', desc: '传统压榨，香浓健康', img: 'https://picsum.photos/seed/prod4/400/300', sales: 412 },
+    { id: 'p5', name: '干香菇', price: '78', unit: '袋/500g', desc: '深山椴木种植，香味浓郁', img: 'https://picsum.photos/seed/prod5/400/300', sales: 167 },
+    { id: 'p6', name: '红薯粉条', price: '35', unit: '袋/500g', desc: '纯手工制作，口感劲道', img: 'https://picsum.photos/seed/prod6/400/300', sales: 523 }
+  ],
+
+  // 露营基地
+  camps: [
+    { id: 'c1', name: '星空露营基地', desc: '海拔800米，远离光污染，是观星圣地', price: '188', unit: '顶/晚', img: 'https://picsum.photos/seed/camp1/400/300', tags: ['观星', '烧烤', '篝火'], features: ['专业露营帐篷', '天文望远镜租借', '烧烤设备', '24小时热水'] },
+    { id: 'c2', name: '湖畔露营区', desc: '紧邻水库，湖光山色，宁静惬意', price: '158', unit: '顶/晚', img: 'https://picsum.photos/seed/camp2/400/300', tags: ['钓鱼', '划船', '亲子'], features: ['湖景帐篷', '免费停车', '钓鱼工具租借', '儿童游乐区'] },
+    { id: 'c3', name: '森林木屋营地', desc: '独栋木屋掩映在松林间，呼吸森林负氧离子', price: '288', unit: '间/晚', img: 'https://picsum.photos/seed/camp3/400/300', tags: ['森林', '静修', '养生'], features: ['独栋木屋', '独立卫浴', '厨房设施', '森林SPA'] }
+  ],
+
+  // 角色类型（注册）
+  roles: [
+    { id: 'r1', icon: '🏠', name: '村民', path: 'register-villager.html' },
+    { id: 'r2', icon: '👔', name: '村主任', path: 'register-township.html' },
+    { id: 'r3', icon: '🏪', name: '超市老板', path: 'register-market.html' },
+    { id: 'r4', icon: '🏗️', name: '建筑公司', path: 'register-construction.html' },
+    { id: 'r5', icon: '📚', name: '老师', path: 'register-teacher.html' },
+    { id: 'r6', icon: '🎓', name: '大学生', path: 'register-student.html' },
+    { id: 'r7', icon: '⚖️', name: '律师事务所', path: 'register-law-firm.html' },
+    { id: 'r8', icon: '👨‍💼', name: '律师', path: 'register-lawyer.html' },
+    { id: 'r9', icon: '🚛', name: '货运司机', path: 'register-truck.html' },
+    { id: 'r10', icon: '🚗', name: '顺风车司机', path: 'register-carpool.html' },
+    { id: 'r11', icon: '💆', name: '按摩技师', path: 'register-massage.html' }
+  ],
+
+  // 留言数据
+  messages: [
+    { id: 'm1', author: '张三', avatar: '👨', text: '幸福村风景真美，周末带孩子去玩得很开心！', time: '2小时前', likes: 12 },
+    { id: 'm2', author: '李四', avatar: '👩', text: '农家乐的饭菜很好吃，老板人也很热情。', time: '5小时前', likes: 8 }
+  ],
+
+  // 我的收藏
+  favorites: [],
+
+  // 浏览历史
+  history: []
+}
+
+// 工具函数
+function genId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5) }
+
+function formatTime(ts) {
+  const d = new Date(ts)
+  const now = Date.now()
+  const diff = now - ts
+  if (diff < 60000) return '刚刚'
+  if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前'
+  if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前'
+  return d.toLocaleDateString('zh-CN')
+}
+
+function toast(msg, duration = 2000) {
+  const existing = document.querySelector('.toast')
+  if (existing) existing.remove()
+  const el = document.createElement('div')
+  el.className = 'toast'
+  el.textContent = msg
+  document.body.appendChild(el)
+  setTimeout(() => el.remove(), duration)
+}
+
+// 存储
+const Storage = {
+  get(key, defaultVal) {
+    try {
+      const v = localStorage.getItem('village_' + key)
+      return v ? JSON.parse(v) : defaultVal
+    } catch { return defaultVal }
+  },
+  set(key, val) {
+    localStorage.setItem('village_' + key, JSON.stringify(val))
+  }
+}
+
+// 初始化示例数据到localStorage
+function initSampleData() {
+  if (!localStorage.getItem('village_villages')) {
+    Storage.set('villages', DB.villages)
+  }
+  if (!localStorage.getItem('village_messages')) {
+    Storage.set('messages', DB.messages)
+  }
+  if (!localStorage.getItem('village_favorites')) {
+    Storage.set('favorites', [])
+  }
+  if (!localStorage.getItem('village_history')) {
+    Storage.set('history', [])
+  }
+}
+
+// 用户
+let currentUser = Storage.get('user', null)
+
+function login(nickName, avatarUrl) {
+  currentUser = { id: genId(), nickName, avatarUrl, time: Date.now() }
+  Storage.set('user', currentUser)
+  return currentUser
+}
+
+function logout() {
+  currentUser = null
+  localStorage.removeItem('village_user')
+}</script>
+  <script>
+    function init() {
+      const fav = Storage.get('favorites', []) || []
+      if (fav.length === 0) {
+        document.getElementById('content').innerHTML = '<div class="empty-state"><span class="empty-icon">⭐</span><span>暂无收藏内容</span><br><button class="btn-primary" style="margin-top:16px;width:auto;padding:8px 24px" onclick="goPage(\'index.html\')">去首页逛逛</button></div>'
+        return
+      }
+      document.getElementById('content').innerHTML = fav.map(v => `
+        <div class="list-card" onclick="goDetail('${v.id}')">
+          <img class="list-thumb" src="${v.images && v.images[0] ? v.images[0] : 'https://picsum.photos/seed/' + v.id + '/200/200'}" alt="${v.name}">
+          <div class="list-info">
+            <div class="list-title">${v.name}</div>
+            <div class="list-meta">📍 ${v.province || ''} ${v.city || ''}</div>
+            <div class="list-meta">👥 ${v.population || ''}人</div>
+          </div>
+          <button style="align-self:center;background:none;border:none;color:#FF9800;font-size:12px;cursor:pointer" onclick="event.stopPropagation();removeFav('${v.id}')">取消收藏</button>
+        </div>`).join('')
+    }
+
+    function removeFav(id) {
+      let f = Storage.get('favorites', [])
+      f = f.filter(x => x.id !== id)
+      Storage.set('favorites', f)
+      toast('已取消收藏')
+      init()
+    }
+
+    function goDetail(id) { location.href = 'village-detail.html?id=' + id }
+    function goPage(url) { location.href = url }
+    init()
+  </script>
+</body>
+</html>
