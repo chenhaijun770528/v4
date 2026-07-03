@@ -463,7 +463,7 @@ const DB = {
         { id: 's5', title: '阳光花海', desc: '百亩花田，四季花开', img: 'https://picsum.photos/seed/scene5/400/300' }
       ],
       food: [
-        { id: 'f4', name: '有机草莓', price: '35', unit: '斤', desc: '有机种植，个大香甜', img: 'https://picsum.photos/seed/food4/400/300' },
+        { id: 'f4', name: '有机草莓', price: '35', unit: '斤', desc: '有机种植，个大香��', img: 'https://picsum.photos/seed/food4/400/300' },
         { id: 'f5', name: '客家酿豆腐', price: '38', unit: '份', desc: '传统客家美食', img: 'https://picsum.photos/seed/food5/400/300' }
       ],
       images: ['https://picsum.photos/seed/v2a/400/300', 'https://picsum.photos/seed/v2b/400/300']
@@ -622,16 +622,10 @@ function logout() {
         document.getElementById('regForm').reset();
         if (btn) { btn.disabled = false; btn.textContent = '提交'; }
         setTimeout(function() { location.href = 'index.html'; }, 1500);
-    var btn = document.querySelector('button[onclick="submit()"]');
-    if (btn) { btn.disabled = true; btn.textContent = '已提交'; }
-    alert('申请成功！等待管理员审核。');
-    setTimeout(function() { location.href = 'index.html'; }, 2000);
-  })
-  .catch(function(err) {
-    var btn = document.querySelector('button[onclick="submit()"]');
-    if (btn) { btn.disabled = false; btn.textContent = '重新提交'; }
-    alert('提交失败，请检查网络后重试。');
-  });
+      }).catch(function(err) {
+        alert('提交失败: ' + (err.msg || JSON.stringify(err)));
+        if (btn) { btn.disabled = false; btn.textContent = '提交'; }
+      });
     }
   </script>
 </body>
