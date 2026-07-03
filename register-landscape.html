@@ -244,7 +244,7 @@ body {
 .detail-section h3 { font-size: 15px; color: #2E7D32; margin-bottom: 10px; }
 .detail-section p { font-size: 14px; color: #666; line-height: 1.8; }
 
-/* 图��网格 */
+/* 图片网格 */
 .img-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .img-grid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; }
 
@@ -288,7 +288,7 @@ body {
 .role-icon { font-size: 36px; display: block; margin-bottom: 8px; }
 .role-name { font-size: 14px; font-weight: bold; color: #333; }
 
-/* 农产品卡�� */
+/* 农产品卡片 */
 .product-card { background: white; border-radius: 12px; overflow: hidden; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); cursor: pointer; }
 .product-card:active { transform: scale(0.98); }
 .product-img { width: 100%; height: 160px; object-fit: cover; }
@@ -473,7 +473,7 @@ const DB = {
       totalArea: '3800',
       farmlandArea: '1800',
       commercialArea: '150',
-      description: '青山村坐落于长株潭后花园，森林覆盖率超过70%，空气清新，是天然的氧吧。村内��古民居、古井等历史遗迹，适合徒步探险和研学旅行。',
+      description: '青山村坐落于长株潭后花园，森林覆盖率超过70%，空气清新，是天然的氧吧。村内有古民居、古井等历史遗迹，适合徒步探险和研学旅行。',
       chief: { name: '王志强', phone: '13800138003' },
       scenery: [
         { id: 's6', title: '古民居群', desc: '保存完好的明清古建筑', img: 'https://picsum.photos/seed/scene6/400/300' },
@@ -501,7 +501,7 @@ const DB = {
   // 露营基地
   camps: [
     { id: 'c1', name: '星空露营基地', desc: '海拔800米，远离光污染，是观星圣地', price: '188', unit: '顶/晚', img: 'https://picsum.photos/seed/camp1/400/300', tags: ['观星', '烧烤', '篝火'], features: ['专业露营帐篷', '天文望远镜租借', '烧烤设备', '24小时热水'] },
-    { id: 'c2', name: '湖畔露营区', desc: '紧邻水库，湖光山色，宁静惬意', price: '158', unit: '顶/晚', img: 'https://picsum.photos/seed/camp2/400/300', tags: ['钓鱼', '划船', '亲子'], features: ['湖景帐篷', '免费停车', '钓���工具租借', '儿童游乐区'] },
+    { id: 'c2', name: '湖畔露营区', desc: '紧邻水库，湖光山色，宁静惬意', price: '158', unit: '顶/晚', img: 'https://picsum.photos/seed/camp2/400/300', tags: ['钓鱼', '划船', '亲子'], features: ['湖景帐篷', '免费停车', '钓鱼工具租借', '儿童游乐区'] },
     { id: 'c3', name: '森林木屋营地', desc: '独栋木屋掩映在松林间，呼吸森林负氧离子', price: '288', unit: '间/晚', img: 'https://picsum.photos/seed/camp3/400/300', tags: ['森林', '静修', '养生'], features: ['独栋木屋', '独立卫浴', '厨房设施', '森林SPA'] }
   ],
 
@@ -520,7 +520,7 @@ const DB = {
     { id: 'r11', icon: '💆', name: '按摩技师', path: 'register-massage.html' }
   ],
 
-  // 留���数据
+  // 留言数据
   messages: [
     { id: 'm1', author: '张三', avatar: '👨', text: '幸福村风景真美，周末带孩子去玩得很开心！', time: '2小时前', likes: 12 },
     { id: 'm2', author: '李四', avatar: '👩', text: '农家乐的饭菜很好吃，老板人也很热情。', time: '5小时前', likes: 8 }
@@ -599,28 +599,33 @@ function logout() {
   localStorage.removeItem('village_user')
 }</script>
   <script>    function submit() {
-      var name = document.getElementById('name').value.trim();
-      var phone = document.getElementById('phone').value.trim();
-      if (!name) { alert('请输入姓名'); return; }
-      if (!phone || !/^1\d{10}$/.test(phone)) { alert('请输入正确的手机号'); return; }
+      var name = document.getElementById("name").value.trim();
+      var phone = document.getElementById("phone").value.trim();
+      if (!name) { alert("请输入姓名"); return; }
+      if (!phone || !/^1\d{10}$/.test(phone)) { alert("请输入正确的手机号"); return; }
       var btn = document.querySelector('button[onclick="submit()"]');
-      if (btn) { btn.disabled = true; btn.textContent = '提交中...'; }
+      if (btn) { btn.disabled = true; btn.textContent = "提交中..."; }
       var regData = {
-        id: 'r' + Date.now(),
-        role: '园林设计师',
+        id: "r" + Date.now(),
+        role: "园林设计师",
         name: name,
         phone: phone,
-        status: '待审核',
+        status: "待审核",
         createdAt: Date.now()
       };
       cloudAddRegistration(regData).then(function() {
-        alert('申请已提交，等待管理员审核！');
-        document.getElementById('regForm').reset();
-        if (btn) { btn.disabled = false; btn.textContent = '提交'; }
-        setTimeout(function() { location.href = 'index.html'; }, 1500);
+        alert("申请已提交，等待管理员审核！");
+        try { var f = document.getElementById("regForm") || document.querySelector("form"); if (f && f.reset) f.reset(); } catch(e) {}
+        if (btn) { btn.disabled = false; btn.textContent = "提交"; }
+        setTimeout(function() { location.href = "index.html"; }, 1500);
       }).catch(function(err) {
-        alert('提交失败: ' + (err.msg || JSON.stringify(err)));
-        if (btn) { btn.disabled = false; btn.textContent = '提交'; }
+        try {
+          var localRegs = JSON.parse(localStorage.getItem("village_registrations") || "[]");
+          localRegs.push(regData);
+          localStorage.setItem("village_registrations", JSON.stringify(localRegs));
+        } catch(e2) {}
+        alert("提交失败: " + (err && err.msg ? err.msg : JSON.stringify(err)));
+        if (btn) { btn.disabled = false; btn.textContent = "重新提交"; }
       });
     }
   </script>
