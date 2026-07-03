@@ -602,7 +602,7 @@ const DB = {
       totalArea: '6200',
       farmlandArea: '3500',
       commercialArea: '350',
-      description: '阳光村是广州市郊的现代化农村，积极发展乡村旅游和生态农业。村内有大型草莓采摘园、农家乐设施，是城市居民周末体验田园生活的好选择。',
+      description: '阳光村是广州市���的现代化农村，积极发展乡村旅游和生态农业。村内有大型草莓采摘园、农家乐设施，是城市居民周末体验田园生活的好选择。',
       chief: { name: '李明华', phone: '13800138002' },
       scenery: [
         { id: 's4', title: '草莓采摘园', desc: '50亩有机草莓，个大味甜', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' },
@@ -1053,7 +1053,7 @@ initSampleData();
 // 从云端加载最新数据
 if (window.CloudDB) {
   window.CloudDB.init(function() {
-    console.log("[Index] 云端数据已加载");
+    console.log("[Index] 云��数据已加载");
     // 触发页面重新渲染
     if (typeof renderPage === "function") renderPage();
     else if (typeof init === "function") init();
