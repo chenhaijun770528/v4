@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>云端角色同步工具</title>
+<style>
+body { font-family: -apple-system, sans-serif; padding: 20px; background: #f5f5f5; color: #333; }
+.box { background: white; padding: 20px; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+h1 { color: #2E7D32; margin: 0 0 16px 0; }
+.info { background: #f0f7f0; padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; line-height: 1.8; word-break: break-all; }
+.btn { background: #2E7D32; color: white; border: none; padding: 14px 20px; border-radius: 8px; font-size: 16px; width: 100%; cursor: pointer; margin: 8px 0; }
+.btn:hover { background: #1B5E20; }
+.btn-secondary { background: #FF9800; }
+.ok { color: #2E7D32; font-weight: bold; }
+.err { color: #F44336; font-weight: bold; }
+pre { background: #f5f5f5; padding: 10px; border-radius: 6px; font-size: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-all; }
+</style>
+</head>
+<body>
+<h1>🔄 云端角色同步工具</h1>
+<div class="box">
+  <div class="info">
+    <b>第 1 步：本地账号信息</b><br>
+    <div id="localInfo">读取中...</div>
+  </div>
+  <button class="btn" onclick="doSync()">🔄 点击同步云端角色</button>
+  <div class="info">
+    <b>第 2 步：同步结果</b><br>
+    <div id="syncResult">等待点击...</div>
+  </div>
+  <button class="btn btn-secondary" onclick="location.href='profile.html'">→ 进入个人中心</button>
+</div>
+
+<script src="cloud_db.js"></script>
+<script>
+var localInfoEl = document.getElementById('localInfo');
+var syncResultEl = document.getElementById('syncResult');
+
+// 显示本地账号信息
+(function() {
+  var u = null;
+  try { u = JSON.parse(localStorage.getItem('village_user') || 'null') || JSON.parse(localStorage.getItem('village_current_user') || 'null') || JSON.parse(localStorage.getItem('user') || 'null'); } catch(e) {}
+  if (!u) {
+    // 尝试找所有 localStorage key
+    var keys = Object.keys(localStorage);
+    var info = 'localStorage 里的所有 key:<br>' + keys.join(', ') + '<br><br>';
+    info += '没找到用户数据。请先登录！';
+    localInfoEl.innerHTML = info;
+  } else {
+    var info = '<b>用户:</b> ' + (u.username || u.id || u.name || '?') + '<br>';
+    info += '<b>currentRole:</b> ' + (u.currentRole || '未设置') + '<br>';
+    info += '<b>phone:</b> ' + (u.phone || '未设置') + '<br>';
+    info += '<b>id:</b> ' + (u.id || '未设置') + '<br>';
+    info += '<b>name:</b> ' + (u.name || u.nickName || '未设置') + '<br>';
+    info += '<pre>' + JSON.stringify(u, null, 2) + '</pre>';
+    localInfoEl.innerHTML = info;
+  }
+})();
+
+function doSync() {
+  syncResultEl.innerHTML = '正在同步...';
+  
+  if (typeof CloudDB === 'undefined') {
+    syncResultEl.innerHTML = '<span class="err">❌ CloudDB 未定义！cloud_db.js 没加载</span>';
+    return;
+  }
+  
+  CloudDB.loadFromPublic().then(function() {
+    if (typeof cloudData === 'undefined' || !cloudData) {
+      syncResultEl.innerHTML = '<span class="err">❌ 云端数据为空</span>';
+      return;
+    }
+    
+    var accounts = cloudData.accounts || [];
+    var regs = cloudData.registrations || [];
+    
+    var result = '<b>云端账号数:</b> ' + accounts.length + '<br>';
+    result += '<b>云端注册申请数:</b> ' + regs.length + '<br><br>';
+    
+    // 列出所有账号
+    result += '<b>云端账号列表:</b><br>';
+    for (var i = 0; i < accounts.length; i++) {
+      result += '  [' + i + '] username=' + (accounts[i].username || '?') + ', id=' + (accounts[i].id || '?') + ', phone=' + (accounts[i].phone || '?') + ', role=' + (accounts[i].role || '?') + '<br>';
+    }
+    
+    result += '<br><b>已通过的注册申请:</b><br>';
+    for (var j = 0; j < regs.length; j++) {
+      if (regs[j].status === '已通过') {
+        result += '  ' + (regs[j].name || '?') + ' / ' + (regs[j].role || '?') + ' / account=' + (regs[j].account || '?') + ' / phone=' + (regs[j].phone || '?') + '<br>';
+      }
+    }
+    
+    // 尝试匹配
+    var u = null;
+    try { u = JSON.parse(localStorage.getItem('village_user') || 'null') || JSON.parse(localStorage.getItem('village_current_user') || 'null') || JSON.parse(localStorage.getItem('user') || 'null'); } catch(e) {}
+    
+    if (!u) {
+      result += '<br><span class="err">❌ 本地没找到用户</span>';
+      syncResultEl.innerHTML = result;
+      return;
+    }
+    
+    var myInfo = null;
+    for (var ai = 0; ai < accounts.length; ai++) {
+      if (accounts[ai].phone === u.phone || accounts[ai].id === u.id || 
+          accounts[ai].username === u.username || accounts[ai].id === u.username ||
+          accounts[ai].username === u.id) {
+        myInfo = accounts[ai];
+        result += '<br><span class="ok">✅ 在 accounts 里找到匹配: ' + JSON.stringify(myInfo) + '</span>';
+        break;
+      }
+    }
+    
+    if (!myInfo) {
+      for (var ri = 0; ri < regs.length; ri++) {
+        if ((regs[ri].phone === u.phone || regs[ri].account === u.account || 
+             regs[ri].account === u.username || regs[ri].account === u.id) && 
+            regs[ri].status === '已通过') {
+          myInfo = { role: regs[ri].role, name: regs[ri].name };
+          result += '<br><span class="ok">✅ 在 registrations 里找到匹配: ' + JSON.stringify(myInfo) + '</span>';
+          break;
+        }
+      }
+    }
+    
+    if (!myInfo || !myInfo.role) {
+      result += '<br><span class="err">❌ 没找到匹配的角色！</span>';
+      syncResultEl.innerHTML = result;
+      return;
+    }
+    
+    // 更新 currentUser
+    var roleNameMap = {'村主任':'township','村民':'villager','游客':'tourist','超市老板':'market','建筑公司':'construction','建筑园林设计师':'landscape','园林设计师':'landscape','乡村教师':'teacher','大学生':'student','律师':'lawyer','货运司机':'truck','顺风车':'carpool','按摩技师':'massage'};
+    var newRole = roleNameMap[myInfo.role] || myInfo.role;
+    
+    var oldRole = u.currentRole;
+    u.currentRole = newRole;
+    
+    // 写到所有可能的 localStorage key
+    localStorage.setItem('village_user', JSON.stringify(u));
+    localStorage.setItem('village_current_user', JSON.stringify(u));
+    localStorage.setItem('user', JSON.stringify(u));
+    
+    result += '<br><br><span class="ok">🎉 同步成功！</span><br>';
+    result += '<b>旧角色:</b> ' + (oldRole || '无') + '<br>';
+    result += '<b>新角色:</b> ' + newRole + ' (' + myInfo.role + ')<br><br>';
+    result += '<b>现在可以点击下方按钮进入个人中心</b>';
+    
+    syncResultEl.innerHTML = result;
+  }).catch(function(err) {
+    syncResultEl.innerHTML = '<span class="err">❌ 同步失败: ' + (err && err.msg ? err.msg : JSON.stringify(err)) + '</span>';
+  });
+}
+</script>
+</body>
+</html>
