@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>编辑村庄信息</title>
+  <style>/* village-h5 全局样式 */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  background-color: #f5f5f5;
+  color: #333;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* 顶部导航 */
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(135deg, #2E7D32, #4CAF50);
+  color: white;
+  padding: 12px 16px;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.header-title { font-size: 18px; font-weight: bold; }
+.header-back { font-size: 20px; cursor: pointer; padding: 4px 8px; }
+
+/* 主容器 */
+.container {
+  padding: 60px 16px 80px;
+  max-width: 750px;
+  margin: 0 auto;
+}
+
+/* Tab切换 */
+.tab-nav {
+  display: flex;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.tab-nav-item {
+  flex: 1;
+  text-align: center;
+  padding: 10px 8px;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  border-right: 1px solid #eee;
+  transition: all 0.2s;
+}
+
+.tab-nav-item:last-child { border-right: none; }
+.tab-nav-item.active {
+  background: #2E7D32;
+  color: white;
+  font-weight: bold;
+}
+
+/* 表单样式 */
+.form-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+
+.form-group { margin-bottom: 16px; }
+.form-label {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 6px;
+  display: block;
+  font-weight: bold;
+}
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus { border-color: #2E7D32; }
+
+.form-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  min-height: 80px;
+  resize: vertical;
+}
+
+.form-textarea:focus { border-color: #2E7D32; }
+
+.btn-primary {
+  width: 100%;
+  padding: 12px;
+  background: #2E7D32;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+.btn-primary:active { background: #1B5E20; }
+
+/* 图片上传区域 */
+.img-upload-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.img-upload-box {
+  width: 80px;
+  height: 80px;
+  border: 2px dashed #e0e0e0;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.img-upload-box.has-img {
+  border-style: solid;
+  border-color: #2E7D32;
+}
+
+.img-upload-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.img-upload-box .delete-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(244, 67, 54, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  display: none;
+}
+
+.img-upload-box.has-img:hover .delete-btn {
+  display: block;
+}
+
+/* 审核申请卡片 */
+.app-card {
+  background: white;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-left: 4px solid #FF9800;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.app-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.app-card-name { font-size: 15px; font-weight: bold; color: #333; }
+.app-card-applicant { font-size: 12px; color: #999; }
+.app-card-info { font-size: 12px; color: #666; margin-bottom: 8px; }
+
+.app-card-images {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.app-card-images img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.app-card-actions { display: flex; gap: 8px; }
+.app-card-actions button {
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  font-weight: bold;
+}
+
+.app-card-actions .btn-approve {
+  background: #4CAF50;
+  color: white;
+  flex: 1;
+}
+
+.app-card-actions .btn-reject {
+  background: #F44336;
+  color: white;
+  flex: 1;
+}
+
+/* Toast提示 */
+.toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.75);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  z-index: 9999;
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+
+/* 权限提示 */
+.permission-denied {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.permission-icon { font-size: 64px; display: block; margin-bottom: 16px; }
+
+/* 空状态 */
+.empty-state { text-align: center; padding: 40px 20px; color: #999; }
+.empty-icon { font-size: 48px; display: block; margin-bottom: 12px; }
+
+/* 隐藏/显示 */
+.hidden { display: none; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <span class="header-back" onclick="history.back()">←</span>
+    <span class="header-title">🏠 村庄管理</span>
+    <span style="width:40px"></span>
+  </div>
+
+  <div class="container" id="mainContainer">
+    <!-- 权限检查中... -->
+  </div>
+
+  <script>// village-h5 数据存储
+var Storage = {
+  get: function(key, defaultVal) {
+    try {
+      var v = localStorage.getItem('village_' + key);
+      return v ? JSON.parse(v) : defaultVal;
+    } catch(e) { return defaultVal; }
+  },
+  set: function(key, val) {
+    localStorage.setItem('village_' + key, JSON.stringify(val));
+  }
+};
+
+// 工具函数
+function genId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+}
+
+function toast(msg, duration) {
+  duration = duration || 2000;
+  var existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  var el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function() { el.remove(); }, duration);
+}
+
+// 当前村庄和用户
+var currentVillage = null;
+var currentUser = null;
+var villageImages = {
+  mountain: [],
+  lake: [],
+  river: [],
+  farmland: [],
+  forest: []
+};
+
+// 页面初始化
+function init() {
+  checkPermission();
+}
+
+// 检查权限
+function checkPermission() {
+  var user = Storage.get('user', null);
+
+  if (!user) {
+    showPermissionDenied('请先登录');
+    return;
+  }
+
+  if (user.role !== '村主任') {
+    showPermissionDenied('仅村主任可以访问此页面');
+    return;
+  }
+
+  currentUser = user;
+
+  // 查找该村主任所属的村庄
+  var villages = Storage.get('villages', []);
+  currentVillage = null;
+
+  for (var vi = 0; vi < villages.length; vi++) {
+    if (villages[vi].chief && villages[vi].chief.name === user.nickName) {
+      currentVillage = villages[vi];
+      break;
+    }
+  }
+
+  if (!currentVillage) {
+    showPermissionDenied('未找到您所属的村庄，请联系管理员');
+    return;
+  }
+
+  loadMainUI();
+}
+
+// 显示权限拒绝
+function showPermissionDenied(msg) {
+  var container = document.getElementById('mainContainer');
+  container.innerHTML = '<div class="permission-denied">' +
+    '<span class="permission-icon">🔒</span>' +
+    '<div style="font-size:16px;color:#666;margin-bottom:8px;">无访问权限</div>' +
+    '<div style="font-size:14px;color:#999;margin-bottom:16px;">' + msg + '</div>' +
+    '<button class="btn-primary" style="max-width:200px;margin:0 auto;" onclick="goLogin()">去登录</button>' +
+    '</div>';
+}
+
+function goLogin() {
+  window.location.href = 'profile.html';
+}
+
+// 加载主界面
+function loadMainUI() {
+  // 初始化图片数据
+  villageImages.mountain = currentVillage.mountainImages || [];
+  villageImages.lake = currentVillage.lakeImages || [];
+  villageImages.river = currentVillage.riverImages || [];
+  villageImages.farmland = currentVillage.farmlandImages || [];
+  villageImages.forest = currentVillage.forestImages || [];
+
+  var container = document.getElementById('mainContainer');
+  container.innerHTML =
+    '<!-- Tab导航 -->' +
+    '<div class="tab-nav">' +
+    '<div class="tab-nav-item active" id="tabInfo" onclick="switchTab(\'info\')">📝 编辑信息</div>' +
+    '<div class="tab-nav-item" id="tabProduct" onclick="switchTab(\'product\')">🥬 农产品</div>' +
+    '<div class="tab-nav-item" id="tabFood" onclick="switchTab(\'food\')">🍜 美食</div>' +
+    '<div class="tab-nav-item" id="tabCamp" onclick="switchTab(\'camp\')">⛺ 露营</div>' +
+    '</div>' +
+
+    '<!-- 编辑信息面板 -->' +
+    '<div id="panelInfo">' +
+    '<div class="form-card">' +
+    '<div style="font-size:16px;font-weight:bold;color:#2E7D32;margin-bottom:16px;">编辑村庄：' + currentVillage.name + '</div>' +
+
+    '<div class="form-group">' +
+    '<label class="form-label">村庄名称</label>' +
+    '<input class="form-input" id="villageName" value="' + (currentVillage.name || '') + '" disabled style="background:#f5f5f5;">' +
+    '</div>' +
+
+    '<div class="form-group">' +
+    '<label class="form-label">人口 *</label>' +
+    '<input class="form-input" id="villagePopulation" placeholder="请输入人口数量" value="' + (currentVillage.population || '') + '">' +
+    '</div>' +
+
+    '<div class="form-group">' +
+    '<label class="form-label">土地面积（亩）*</label>' +
+    '<input class="form-input" id="villageTotalArea" placeholder="请输入土地总面积" value="' + (currentVillage.totalArea || '') + '">' +
+    '</div>' +
+
+    '<div class="form-group">' +
+    '<label class="form-label">良田面积（亩）*</label>' +
+    '<input class="form-input" id="villageFarmlandArea" placeholder="请输入良田面积" value="' + (currentVillage.farmlandArea || '') + '">' +
+    '</div>' +
+
+    '<div class="form-group">' +
+    '<label class="form-label">村庄描述</label>' +
+    '<textarea class="form-textarea" id="villageDesc" placeholder="请输入村庄描述">' + (currentVillage.description || '') + '</textarea>' +
+    '</div>' +
+    '</div>' +
+
+    '<div class="form-card">' +
+    '<div style="font-size:15px;font-weight:bold;color:#2E7D32;margin-bottom:12px;">🏔️ 山（最多上传3张图片）</div>' +
+    '<div class="img-upload-area" id="mountainImages"></div>' +
+    '</div>' +
+
+    '<div class="form-card">' +
+    '<div style="font-size:15px;font-weight:bold;color:#2E7D32;margin-bottom:12px;">🏞️ 湖（最多上传3张图片）</div>' +
+    '<div class="img-upload-area" id="lakeImages"></div>' +
+    '</div>' +
+
+    '<div class="form-card">' +
+    '<div style="font-size:15px;font-weight:bold;color:#2E7D32;margin-bottom:12px;">🏞️ 河（最多上传3张图片）</div>' +
+    '<div class="img-upload-area" id="riverImages"></div>' +
+    '</div>' +
+
+    '<div class="form-card">' +
+    '<div style="font-size:15px;font-weight:bold;color:#2E7D32;margin-bottom:12px;">🌾 良田（最多上传3张图片）</div>' +
+    '<div class="img-upload-area" id="farmlandImages"></div>' +
+    '</div>' +
+
+    '<div class="form-card">' +
+    '<div style="font-size:15px;font-weight:bold;color:#2E7D32;margin-bottom:12px;">🌲 树林（最多上传3张图片）</div>' +
+    '<div class="img-upload-area" id="forestImages"></div>' +
+    '</div>' +
+
+    '<button class="btn-primary" onclick="saveVillage()">💾 保存修改</button>' +
+    '</div>' +
+
+    '<!-- 农产品申请面板 -->' +
+    '<div id="panelProduct" class="hidden"></div>' +
+
+    '<!-- 美食申请面板 -->' +
+    '<div id="panelFood" class="hidden"></div>' +
+
+    '<!-- 露营申请面板 -->' +
+    '<div id="panelCamp" class="hidden"></div>';
+
+  // 渲染图片上传区域
+  renderImageUploadArea('mountainImages', 'mountain');
+  renderImageUploadArea('lakeImages', 'lake');
+  renderImageUploadArea('riverImages', 'river');
+  renderImageUploadArea('farmlandImages', 'farmland');
+  renderImageUploadArea('forestImages', 'forest');
+}
+
+// Tab切换
+function switchTab(tab) {
+  // 更新Tab样式
+  var tabs = ['Info', 'Product', 'Food', 'Camp'];
+  for (var ti = 0; ti < tabs.length; ti++) {
+    var tabEl = document.getElementById('tab' + tabs[ti]);
+    if (tabEl) {
+      tabEl.classList.remove('active');
+    }
+  }
+  var activeTab = document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+  if (activeTab) activeTab.classList.add('active');
+
+  // 切换面板
+  var panels = ['Info', 'Product', 'Food', 'Camp'];
+  for (var pi = 0; pi < panels.length; pi++) {
+    var panelEl = document.getElementById('panel' + panels[pi]);
+    if (panelEl) panelEl.classList.add('hidden');
+  }
+
+  var targetPanel = document.getElementById('panel' + tab.charAt(0).toUpperCase() + tab.slice(1));
+  if (targetPanel) targetPanel.classList.remove('hidden');
+
+  // 加载对应数据
+  if (tab === 'product') loadProductApps();
+  else if (tab === 'food') loadFoodApps();
+  else if (tab === 'camp') loadCampApps();
+}
+
+// ========== 加载审核列表 ==========
+
+function loadProductApps() {
+  var panel = document.getElementById('panelProduct');
+  var allApps = Storage.get('product_applications', []);
+  var pending = [];
+
+  for (var i = 0; i < allApps.length; i++) {
+    if (allApps[i].villageId === currentVillage.id && allApps[i].status === 'waiting') {
+      pending.push(allApps[i]);
+    }
+  }
+
+  if (pending.length === 0) {
+    panel.innerHTML = '<div class="empty-state"><span class="empty-icon">🥬</span><div>暂无待审核的农产品申请</div></div>';
+    return;
+  }
+
+  var html = '<div style="font-size:14px;color:#666;margin-bottom:12px;">共 ' + pending.length + ' 条待审核申请</div>';
+  for (var pi = 0; pi < pending.length; pi++) {
+    var app = pending[pi];
+    var imgHtml = '';
+    if (app.img) {
+      imgHtml = '<img src="' + app.img + '" onerror="this.style.display=\'none\'">';
+    }
+    html += '<div class="app-card">' +
+      '<div class="app-card-header">' +
+      '<span class="app-card-name">' + app.name + '</span>' +
+      '</div>' +
+      '<div class="app-card-applicant">申请人：' + app.userName + '</div>' +
+      '<div class="app-card-info">价格：¥' + app.price + '/' + app.unit + (app.desc ? ' | ' + app.desc : '') + '</div>' +
+      (imgHtml ? '<div class="app-card-images">' + imgHtml + '</div>' : '') +
+      '<div class="app-card-actions">' +
+      '<button class="btn-approve" onclick="approveItem(\'' + app.id + '\', \'product\')">✅ 通过</button>' +
+      '<button class="btn-reject" onclick="rejectItem(\'' + app.id + '\', \'product\')">❌ 拒绝</button>' +
+      '</div>' +
+      '</div>';
+  }
+  panel.innerHTML = html;
+}
+
+function loadFoodApps() {
+  var panel = document.getElementById('panelFood');
+  var allApps = Storage.get('food_applications', []);
+  var pending = [];
+
+  for (var i = 0; i < allApps.length; i++) {
+    if (allApps[i].villageId === currentVillage.id && allApps[i].status === 'waiting') {
+      pending.push(allApps[i]);
+    }
+  }
+
+  if (pending.length === 0) {
+    panel.innerHTML = '<div class="empty-state"><span class="empty-icon">🍜</span><div>暂无待审核的美食申请</div></div>';
+    return;
+  }
+
+  var html = '<div style="font-size:14px;color:#666;margin-bottom:12px;">共 ' + pending.length + ' 条待审核申请</div>';
+  for (var pi = 0; pi < pending.length; pi++) {
+    var app = pending[pi];
+    var imgHtml = '';
+    if (app.img) {
+      imgHtml = '<img src="' + app.img + '" onerror="this.style.display=\'none\'">';
+    }
+    html += '<div class="app-card">' +
+      '<div class="app-card-header">' +
+      '<span class="app-card-name">' + app.name + '</span>' +
+      '</div>' +
+      '<div class="app-card-applicant">申请人：' + app.userName + '</div>' +
+      '<div class="app-card-info">价格：¥' + app.price + '/' + app.unit + (app.desc ? ' | ' + app.desc : '') + '</div>' +
+      (imgHtml ? '<div class="app-card-images">' + imgHtml + '</div>' : '') +
+      '<div class="app-card-actions">' +
+      '<button class="btn-approve" onclick="approveItem(\'' + app.id + '\', \'food\')">✅ 通过</button>' +
+      '<button class="btn-reject" onclick="rejectItem(\'' + app.id + '\', \'food\')">❌ 拒绝</button>' +
+      '</div>' +
+      '</div>';
+  }
+  panel.innerHTML = html;
+}
+
+function loadCampApps() {
+  var panel = document.getElementById('panelCamp');
+  var allApps = Storage.get('camp_applications', []);
+  var pending = [];
+
+  for (var i = 0; i < allApps.length; i++) {
+    if (allApps[i].villageId === currentVillage.id && allApps[i].status === 'waiting') {
+      pending.push(allApps[i]);
+    }
+  }
+
+  if (pending.length === 0) {
+    panel.innerHTML = '<div class="empty-state"><span class="empty-icon">⛺</span><div>暂无待审核的露营申请</div></div>';
+    return;
+  }
+
+  var html = '<div style="font-size:14px;color:#666;margin-bottom:12px;">共 ' + pending.length + ' 条待审核申请</div>';
+  for (var pi = 0; pi < pending.length; pi++) {
+    var app = pending[pi];
+    var imgHtml = '';
+    if (app.img) {
+      imgHtml = '<img src="' + app.img + '" onerror="this.style.display=\'none\'">';
+    }
+    var tagsStr = app.tags && app.tags.length > 0 ? ' | 标签：' + app.tags.join(', ') : '';
+    html += '<div class="app-card">' +
+      '<div class="app-card-header">' +
+      '<span class="app-card-name">' + app.name + '</span>' +
+      '</div>' +
+      '<div class="app-card-applicant">申请人：' + app.userName + '</div>' +
+      '<div class="app-card-info">价格：¥' + app.price + '/' + app.unit + (app.desc ? ' | ' + app.desc : '') + tagsStr + '</div>' +
+      (imgHtml ? '<div class="app-card-images">' + imgHtml + '</div>' : '') +
+      '<div class="app-card-actions">' +
+      '<button class="btn-approve" onclick="approveItem(\'' + app.id + '\', \'camp\')">✅ 通过</button>' +
+      '<button class="btn-reject" onclick="rejectItem(\'' + app.id + '\', \'camp\')">❌ 拒绝</button>' +
+      '</div>' +
+      '</div>';
+  }
+  panel.innerHTML = html;
+}
+
+// ========== 核心审核功能 ==========
+
+// 通过申请
+function approveItem(appId, type) {
+  if (!confirm('确定通过此申请？通过后该内容将上架展示。')) return;
+
+  var appKey = type + '_applications';
+  var listKey = type + 's'; // products → product列表, foods → food列表, camps → camp列表
+  // 修正: products正式列表key是products，foods正式列表key是foods，camps正式列表key是camps
+  var formalKey = type === 'product' ? 'products' : type === 'food' ? 'foods' : 'camps';
+
+  var apps = Storage.get(appKey, []);
+  var app = null;
+  var appIdx = -1;
+  for (var i = 0; i < apps.length; i++) {
+    if (apps[i].id === appId) { app = apps[i]; appIdx = i; break; }
+  }
+  if (!app) { toast('申请不存在'); return; }
+
+  // 更新申请状态为已通过
+  apps[appIdx].status = 'pass';
+  apps[appIdx].updateTime = Date.now();
+  Storage.set(appKey, apps);
+
+  // 写入正式列表
+  var formalList = Storage.get(formalKey, []);
+  var newItem = {
+    id: app.id,
+    name: app.name,
+    price: app.price,
+    unit: app.unit,
+    desc: app.desc || '',
+    sales: 0,
+    village: app.village,
+    villageId: app.villageId,
+    img: app.img || '',
+    createTime: Date.now()
+  };
+
+  // 露营有额外字段
+  if (type === 'camp') {
+    newItem.tags = app.tags || [];
+  }
+
+  formalList.push(newItem);
+  Storage.set(formalKey, formalList);
+
+  toast('已通过申请，内容已上架');
+  // 刷新当前Tab
+  if (type === 'product') loadProductApps();
+  else if (type === 'food') loadFoodApps();
+  else if (type === 'camp') loadCampApps();
+}
+
+// 拒绝申请
+function rejectItem(appId, type) {
+  if (!confirm('确定拒绝此申请？')) return;
+
+  var appKey = type + '_applications';
+  var apps = Storage.get(appKey, []);
+  var found = false;
+  for (var i = 0; i < apps.length; i++) {
+    if (apps[i].id === appId) {
+      apps[i].status = 'reject';
+      apps[i].updateTime = Date.now();
+      found = true;
+      break;
+    }
+  }
+  if (!found) { toast('申请不存在'); return; }
+
+  Storage.set(appKey, apps);
+  toast('已拒绝该申请');
+
+  if (type === 'product') loadProductApps();
+  else if (type === 'food') loadFoodApps();
+  else if (type === 'camp') loadCampApps();
+}
+
+// ========== 村庄信息保存 ==========
+
+// 渲染图片上传区域
+function renderImageUploadArea(containerId, type) {
+  var container = document.getElementById(containerId);
+  if (!container) return;
+
+  var images = villageImages[type] || [];
+  container.innerHTML = '';
+
+  for (var i = 0; i < images.length; i++) {
+    var box = document.createElement('div');
+    box.className = 'img-upload-box has-img';
+    box.innerHTML = '<img src="' + images[i] + '">' +
+      '<button class="delete-btn" onclick="deleteImage(\'' + type + '\',' + i + ')">×</button>';
+    container.appendChild(box);
+  }
+
+  if (images.length < 3) {
+    var addBox = document.createElement('div');
+    addBox.className = 'img-upload-box';
+    addBox.innerHTML = '+';
+    addBox.onclick = function() { triggerImageUpload(type); };
+    container.appendChild(addBox);
+  }
+}
+
+// 触发图片上传
+function triggerImageUpload(type) {
+  var input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.onchange = function(event) { handleImageUpload(event, type); };
+  input.click();
+}
+
+// 处理图片上传（Canvas压缩）
+function handleImageUpload(event, type) {
+  var file = event.target.files[0];
+  if (!file) return;
+
+  if (villageImages[type].length >= 3) {
+    toast('最多上传3张图片');
+    return;
+  }
+
+  compressImage(file, 800, 600, 0.7, function(compressedDataUrl) {
+    villageImages[type].push(compressedDataUrl);
+    renderImageUploadArea(type + 'Images', type);
+    toast('图片上传成功');
+  });
+}
+
+// Canvas压缩图片
+function compressImage(file, maxWidth, maxHeight, quality, callback) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var ctx = canvas.getContext('2d');
+      var width = img.width;
+      var height = img.height;
+
+      if (width > maxWidth) {
+        height = (height * maxWidth) / width;
+        width = maxWidth;
+      }
+
+      if (height > maxHeight) {
+        width = (width * maxHeight) / height;
+        height = maxHeight;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+
+      callback(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// 删除图片
+function deleteImage(type, index) {
+  if (!confirm('确定要删除这张图片吗？')) return;
+
+  villageImages[type].splice(index, 1);
+  renderImageUploadArea(type + 'Images', type);
+  toast('图片已删除');
+}
+
+// 保存村庄信息
+function saveVillage() {
+  if (!currentVillage) {
+    toast('未找到村庄信息');
+    return;
+  }
+
+  var population = document.getElementById('villagePopulation').value.trim();
+  var totalArea = document.getElementById('villageTotalArea').value.trim();
+  var farmlandArea = document.getElementById('villageFarmlandArea').value.trim();
+  var desc = document.getElementById('villageDesc').value.trim();
+
+  if (!population || !totalArea || !farmlandArea) {
+    toast('请填写必填信息（人口、土地面积、良田面积）');
+    return;
+  }
+
+  currentVillage.population = population;
+  currentVillage.totalArea = totalArea;
+  currentVillage.farmlandArea = farmlandArea;
+  currentVillage.description = desc;
+  currentVillage.mountainImages = villageImages.mountain;
+  currentVillage.lakeImages = villageImages.lake;
+  currentVillage.riverImages = villageImages.river;
+  currentVillage.farmlandImages = villageImages.farmland;
+  currentVillage.forestImages = villageImages.forest;
+  currentVillage.updateTime = Date.now();
+
+  // 保存到localStorage
+  var villages = Storage.get('villages', []);
+  for (var i = 0; i < villages.length; i++) {
+    if (villages[i].id === currentVillage.id) {
+      villages[i] = currentVillage;
+      break;
+    }
+  }
+
+  Storage.set('villages', villages);
+  toast('保存成功');
+}
+
+// 页面加载完成后初始化
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
