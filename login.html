@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>账号登录 - 村庄平台</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #2E7D32, #4CAF50);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .login-box {
+      background: white;
+      border-radius: 16px;
+      padding: 36px 28px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+    }
+    .login-logo {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    .login-logo .icon {
+      font-size: 56px;
+      display: block;
+      margin-bottom: 8px;
+    }
+    .login-logo .title {
+      font-size: 22px;
+      font-weight: bold;
+      color: #2E7D32;
+    }
+    .login-logo .subtitle {
+      font-size: 13px;
+      color: #999;
+      margin-top: 4px;
+    }
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 13px; color: #666; margin-bottom: 6px; display: block; font-weight: 500; }
+    .form-input {
+      width: 100%;
+      padding: 11px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 15px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-input:focus { border-color: #2E7D32; }
+    .btn-login {
+      width: 100%;
+      padding: 13px;
+      background: linear-gradient(135deg, #2E7D32, #388E3C);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn-login:active { transform: scale(0.98); }
+    .btn-register {
+      width: 100%;
+      padding: 12px;
+      background: white;
+      color: #2E7D32;
+      border: 2px solid #2E7D32;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .divider {
+      text-align: center;
+      margin: 18px 0;
+      font-size: 12px;
+      color: #ccc;
+      position: relative;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 35%;
+      height: 1px;
+      background: #e0e0e0;
+    }
+    .divider::before { left: 0; }
+    .divider::after { right: 0; }
+    .toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 12px 28px;
+      border-radius: 10px;
+      font-size: 14px;
+      z-index: 9999;
+    }
+    .error-msg {
+      color: #F44336;
+      font-size: 12px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="icon">🏘️</span>
+      <div class="title">村庄开发平台</div>
+      <div class="subtitle">村村通 · 共建美丽乡村</div>
+    </div>
+
+    <div id="loginForm">
+      <div class="form-group">
+        <label class="form-label">账号</label>
+        <input class="form-input" id="account" placeholder="请输入账号" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label">密码</label>
+        <input class="form-input" id="password" type="password" placeholder="请输入密码">
+      </div>
+      <div class="error-msg" id="errorMsg"></div>
+      <button class="btn-login" onclick="doLogin()">登 录</button>
+      <button style="margin-top:10px;background:#FF9800;color:#fff;border:none;padding:8px 20px;border-radius:20px;font-size:13px;" onclick="recoverAccounts()">账号丢失？点击恢复</button>
+      <div class="divider">没有账号？</div>
+      <button class="btn-register" onclick="goRegister()">立即注册</button>
+    </div>
+  </div>
+
+  <script>
+    // Storage封装（带village_前缀，与旧页面一致）
+    var Storage = {
+      get: function(key, defaultVal) {
+        try {
+          var v = localStorage.getItem('village_' + key);
+          return v ? JSON.parse(v) : defaultVal;
+        } catch(e) { return defaultVal; }
+      },
+      set: function(key, val) {
+        localStorage.setItem('village_' + key, JSON.stringify(val));
+      }
+    };
+
+    function toast(msg) {
+      var el = document.createElement('div');
+      el.className = 'toast';
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(function() { el.remove(); }, 2000);
+    }
+
+    function goRegister() {
+      location.href = 'register.html';
+    }
+
+    function doLogin() {
+      var account = document.getElementById('account').value.trim();
+      var password = document.getElementById('password').value.trim();
+      var errorMsg = document.getElementById('errorMsg');
+
+      errorMsg.textContent = '';
+
+      if (!account) {
+        errorMsg.textContent = '请输入账号';
+        return;
+      }
+      if (!password) {
+        errorMsg.textContent = '请输入密码';
+        return;
+      }
+
+      // 查找账号
+      var accounts = Storage.get('accounts', []);
+      var found = null;
+      for (var i = 0; i < accounts.length; i++) {
+        if (accounts[i].account === account) {
+          found = accounts[i];
+          break;
+        }
+      }
+
+      if (!found) {
+        errorMsg.textContent = '账号不存在';
+        return;
+      }
+
+      if (found.password !== password) {
+        errorMsg.textContent = '密码错误';
+        return;
+      }
+
+      if (found.status === 'disabled') {
+        errorMsg.textContent = '账号已被禁用';
+        return;
+      }
+
+      // 登录成功！保存当前会话
+      Storage.set('user', found);
+
+      // 自动补全 currentRole.village（如果缺失）
+      if (found.currentRole && !found.currentRole.village) {
+        // 从 registrations 里查找村庄
+        var regs = Storage.get('registrations', []);
+        for (var ri = 0; ri < regs.length; ri++) {
+          if (regs[ri].account === found.account && regs[ri].village) {
+            found.currentRole.village = regs[ri].village;
+            break;
+          }
+        }
+        // 从 villages 数组里找（村主任）
+        if (!found.currentRole.village) {
+          var villages = Storage.get('villages', []);
+          for (var vi = 0; vi < villages.length; vi++) {
+            if (villages[vi].chief && villages[vi].chief.name === found.currentRoleName) {
+              found.currentRole.village = villages[vi].name;
+              break;
+            }
+          }
+        }
+        // 同步更新 accounts 和 user
+        if (found.currentRole.village) {
+          var accounts2 = Storage.get('accounts', []);
+          for (var ai = 0; ai < accounts2.length; ai++) {
+            if (accounts2[i] && accounts2[ai].id === found.id) {
+              accounts2[ai].currentRole = found.currentRole;
+              break;
+            }
+          }
+          Storage.set('accounts', accounts2);
+          Storage.set('user', found);
+        }
+      }
+
+      toast('登录成功！');
+      setTimeout(function() {
+        // 根据当前角色状态跳转
+        if (found.currentRole && found.currentRole !== 'none') {
+          location.href = 'index.html';
+        } else {
+          // 没有角色，跳转选角色
+          location.href = 'select-role.html';
+        }
+      }, 800);
+    }
+
+    // 回车登录
+    document.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') doLogin();
+    });
+
+    // 如果已经登录且有角色，直接跳转
+    (function() {
+      var user = Storage.get('user', null);
+      if (user && user.currentRole && user.currentRole !== 'none') {
+        location.href = 'index.html';
+      }
+    })();
+  
+    // 一键恢复：从 registrations 重建 accounts（解决 key 变更导致账号丢失）
+    function recoverAccounts() {
+      var regs = Storage.get('registrations', []);
+      var accounts = Storage.get('accounts', []);
+      var restored = 0;
+      for (var i = 0; i < regs.length; i++) {
+        var r = regs[i];
+        if (!r.account || !r.password) continue;
+        // 检查是否已存在
+        var exists = false;
+        for (var j = 0; j < accounts.length; j++) {
+          if (accounts[j].account === r.account) { exists = true; break; }
+        }
+        if (!exists) {
+          var acc = {
+            account: r.account,
+            password: r.password,
+            id: r.id || r.account,
+            name: r.name || r.account,
+            currentRole: r.role ? {role: r.role === '村主任'?'head':(r.role==='村民'?'villager':'tourist'), roleName: r.role, village: r.village||''} : null,
+            status: r.status || 'active',
+            phone: r.phone || '',
+            village: r.village || ''
+          };
+          accounts.push(acc);
+          restored++;
+        }
+      }
+      Storage.set('accounts', accounts);
+      alert('恢复完成！共恢复 ' + restored + ' 个账号。请重新输入账号密码登录。');
+      location.reload();
+    }
+
+</script>
+</body>
+</html>
