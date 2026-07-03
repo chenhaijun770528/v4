@@ -460,7 +460,7 @@ const DB = {
       totalArea: '4500',
       farmlandArea: '2800',
       commercialArea: '200',
-      description: '幸福村位于苏州市郊区，环境优美，基础设施完善，是著名的生态农业示范村。村内有千年古银杏树、多彩田园，是周末休闲的好去处。',
+      description: '幸福村位于苏州市郊区，环境优美，基础设施完善，是著名的生态农业示范村。村内有千年���银杏树、多彩田园，是周末休闲的好去处。',
       chief: { name: '张建国', phone: '13800138001' },
       scenery: [
         { id: 's1', title: '千年古银杏', desc: '树龄超过800年，树高25米，胸围6米', img: 'https://picsum.photos/seed/scene1/400/300' },
@@ -504,7 +504,7 @@ const DB = {
       totalArea: '3800',
       farmlandArea: '1800',
       commercialArea: '150',
-      description: '青山村坐落于长株潭后花园，森林覆盖率超过70%，空气清新，是天然的氧吧。村内有古民居、古井等历史遗迹，适合徒步探险和研学旅行。',
+      description: '青山村坐落于长株潭后花园，森林覆盖率超过70%，空气清新��是天然的氧吧。村内有古民居、古井等历史遗迹，适合徒步探险和研学旅行。',
       chief: { name: '王志强', phone: '13800138003' },
       scenery: [
         { id: 's6', title: '古民居群', desc: '保存完好的明清古建筑', img: 'https://picsum.photos/seed/scene6/400/300' },
@@ -532,7 +532,7 @@ const DB = {
   // 露营基地
   camps: [
     { id: 'c1', name: '星空露营基地', desc: '海拔800米，远离光污染，是观星圣地', price: '188', unit: '顶/晚', img: 'https://picsum.photos/seed/camp1/400/300', tags: ['观星', '烧烤', '篝火'], features: ['专业露营帐篷', '天文望远镜租借', '烧烤设备', '24小时热水'] },
-    { id: 'c2', name: '湖畔露营区', desc: '紧邻水库，湖光山色，宁静惬意', price: '158', unit: '顶/晚', img: 'https://picsum.photos/seed/camp2/400/300', tags: ['钓鱼', '划船', '亲子'], features: ['湖景帐篷', '免费停车', '钓鱼工具租借', '儿童游乐区'] },
+    { id: 'c2', name: '湖畔露营区', desc: '紧邻水库，湖光山色，宁静惬意', price: '158', unit: '顶/晚', img: 'https://picsum.photos/seed/camp2/400/300', tags: ['钓鱼', '划船', '亲子'], features: ['湖景帐篷', '免费停车', '��鱼工具租借', '儿童游乐区'] },
     { id: 'c3', name: '森林木屋营地', desc: '独栋木屋掩映在松林间，呼吸森林负氧离子', price: '288', unit: '间/晚', img: 'https://picsum.photos/seed/camp3/400/300', tags: ['森林', '静修', '养生'], features: ['独栋木屋', '独立卫浴', '厨房设施', '森林SPA'] }
   ],
 
@@ -641,7 +641,7 @@ function logout() {
       if (!phone || !/^1\d{10}$/.test(phone)) { alert('请输入正确的手机号'); return; }
       var villageSelect = document.getElementById('village');
       var villageName = villageSelect ? villageSelect.value : '';
-      if (!villageName) { alert('请选择所在村庄'); return; }
+      if (!villageName) { alert('请选择所在��庄'); return; }
       var btn = document.querySelector('button[onclick="submit()"]');
       if (btn) { btn.disabled = true; btn.textContent = '提交中...'; }
       var regData = {
