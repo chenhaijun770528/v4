@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>本村入驻审核</title>
+  <style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5; font-size: 14px; }
+.header { position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #2E7D32, #4CAF50); color: white; padding: 12px 16px; z-index: 100; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.header-title { font-size: 18px; font-weight: bold; }
+.header-back { font-size: 20px; cursor: pointer; padding: 4px 8px; }
+.container { padding: 60px 16px 80px; max-width: 750px; margin: 0 auto; }
+.empty { text-align: center; padding: 40px 0; color: #999; font-size: 15px; }
+.empty-icon { font-size: 48px; display: block; margin-bottom: 10px; }
+.card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.card-name { font-size: 16px; font-weight: bold; color: #333; margin-bottom: 6px; }
+.card-row { font-size: 13px; color: #666; margin-bottom: 4px; }
+.card-row span { color: #2E7D32; font-weight: 600; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; margin-left: 6px; }
+.badge-orange { background: #FFF3E0; color: #E65100; }
+.badge-green { background: #E8F5E9; color: #2E7D32; }
+.badge-red { background: #FFEBEE; color: #C62828; }
+.btns { display: flex; gap: 8px; margin-top: 10px; }
+.btn-ok { flex: 1; padding: 8px; background: #4CAF50; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+.btn-no { flex: 1; padding: 8px; background: #EF5350; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+.loading { text-align: center; padding: 40px; color: #999; }
+.notice-bar { background: #E3F2FD; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: #1565C0; }
+.toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.75); color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 9999; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="header-back" onclick="location.href='profile.html'">←</span>
+    <span class="header-title">👥 本村入驻审核</span>
+    <span style="width:40px"></span>
+  </div>
+
+  <div class="container" id="app">
+    <div class="loading">加载中...</div>
+  </div>
+
+<script src="cloud_db.js"></script>
+<script>
+(function() {
+  var SUPABASE_URL = 'https://eivqbbxyllsorbvgqsju.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpdnFiYnh5bGxzb3Jidmdxc2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MTIzMDksImV4cCI6MjA5ODI4ODMwOX0.QeKnbo1cgA0yGMOEydML3PNXatH1V1QXfW0hyxRy7KY';
+
+  var Storage = {
+    get: function(k, def) {
+      try { var v = localStorage.getItem('village_' + k); return v ? JSON.parse(v) : def; }
+      catch(e) { return def; }
+    },
+    set: function(k, v) {
+      try { localStorage.setItem('village_' + k, JSON.stringify(v)); return true; }
+      catch(e) { return false; }
+    }
+  };
+
+  var user = Storage.get('user', null);
+  var app = document.getElementById('app');
+
+  if (!user) {
+    app.innerHTML = '<div class="empty"><div class="empty-icon">🔒</div>请先登录<div style="margin-top:12px;"><button class="btn-ok" onclick="location.href=\'login.html\'">去登录</button></div></div>';
+    return;
+  }
+  if (user.role !== '村主任') {
+    app.innerHTML = '<div class="empty"><div class="empty-icon">🚫</div>仅村主任可访问此页面<div style="margin-top:12px;"><button class="btn-ok" onclick="location.href=\'profile.html\'">返回个人中心</button></div></div>';
+    return;
+  }
+
+  var myVillage = user.village || '';
+  if (!myVillage) {
+    app.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>您的账号未绑定村庄，请联系管理员<div style="margin-top:12px;"><button class="btn-ok" onclick="location.href=\'profile.html\'">返回</button></div></div>';
+    return;
+  }
+
+  function toast(msg) {
+    var t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function() { t.remove(); }, 2000);
+  }
+
+  function esc(s) { if (s == null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function fmtTime(ts) {
+    if (!ts) return '';
+    var d = new Date(ts);
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  function loadAndRender() {
+    // 尝试从云端加载
+    if (typeof cloudLoad === 'function') {
+      cloudLoad().then(function(rows) {
+        var cloudData = { registrations: [], villages: [], accounts: [], products: [], food: [], camps: [], announcements: [] };
+        if (rows && rows.length > 0 && rows[0].data) {
+          cloudData = Object.assign(cloudData, rows[0].data);
+        }
+        Storage.set('registrations', cloudData.registrations || []);
+        Storage.set('villages', cloudData.villages || []);
+        Storage.set('accounts', cloudData.accounts || []);
+        render(cloudData.registrations || []);
+      }).catch(function() {
+        render(Storage.get('registrations', []));
+      });
+    } else {
+      render(Storage.get('registrations', []));
+    }
+  }
+
+  function render(regs) {
+    // 过滤：本村庄 + 待村主任审核
+    var pending = regs.filter(function(r) {
+      return (r.village || '') === myVillage && r.status === '待村主任审核';
+    });
+
+    var html = '<div class="notice-bar">🏘️ 管理村庄：' + esc(myVillage) + ' | 待审核入驻申请：' + pending.length + ' 条</div>';
+
+    if (pending.length === 0) {
+      html += '<div class="empty"><div class="empty-icon">📋</div>暂无待审核的入驻申请</div>';
+    } else {
+      pending.forEach(function(r) {
+        var badge = '<span class="badge badge-orange">⏳ 待审核</span>';
+        html += '<div class="card">' +
+          '<div class="card-name">' + esc(r.name || '?') + ' ' + badge + '</div>' +
+          '<div class="card-row">📱 手机号：<span>' + esc(r.phone || '?') + '</span></div>' +
+          '<div class="card-row">🏘️ 申请村庄：<span>' + esc(r.village || '?') + '</span></div>' +
+          '<div class="card-row">📅 申请时间：' + fmtTime(r.createdAt) + '</div>' +
+          '<div class="btns">' +
+          '<button class="btn-ok" onclick="passVillager(\'' + (r.id||'') + '\')">✅ 通过</button>' +
+          '<button class="btn-no" onclick="rejectVillager(\'' + (r.id||'') + '\')">❌ 驳回</button>' +
+          '</div>' +
+          '</div>';
+      });
+    }
+
+    // 已处理记录
+    var processed = regs.filter(function(r) {
+      return (r.village || '') === myVillage && r.status !== '待村主任审核';
+    });
+    if (processed.length > 0) {
+      html += '<div style="font-size:13px;color:#999;margin:16px 0 8px;font-weight:bold;">已处理记录</div>';
+      processed.forEach(function(r) {
+        var badge = r.status === '已通过'
+          ? '<span class="badge badge-green">✅ 已通过</span>'
+          : '<span class="badge badge-red">❌ 已驳回</span>';
+        html += '<div class="card" style="opacity:0.7;">' +
+          '<div class="card-name">' + esc(r.name || '?') + ' ' + badge + '</div>' +
+          '<div class="card-row">📱 手机：' + esc(r.phone || '') + ' | ' + fmtTime(r.createdAt) + '</div>' +
+          '</div>';
+      });
+    }
+
+    html += '<div style="text-align:center;margin-top:16px;"><button class="btn-ok" style="background:#9E9E9E;max-width:200px;" onclick="loadAndRender()">🔄 刷新列表</button></div>';
+    html += '<div style="text-align:center;margin-top:10px;"><button style="background:none;border:none;color:#2E7D32;font-size:14px;cursor:pointer;padding:8px;" onclick="location.href=\'profile.html\'">← 返回个人中心</button></div>';
+
+    app.innerHTML = html;
+  }
+
+  // 通过村民入驻申请
+  window.passVillager = function(id) {
+    if (!confirm('确定通过此入驻申请？\n\n通过后该用户将成为本村村民，可提交商品上架申请。')) return;
+    var regs = Storage.get('registrations', []);
+    var target = null;
+    for (var i = 0; i < regs.length; i++) {
+      if (regs[i].id === id) { target = regs[i]; break; }
+    }
+    if (!target) { toast('未找到该申请'); return; }
+
+    // 更新申请状态
+    target.status = '已通过';
+    Storage.set('registrations', regs);
+
+    // 在 accounts 里创建村民正式账号
+    var accounts = Storage.get('accounts', []);
+    var exists = false;
+    for (var j = 0; j < accounts.length; j++) {
+      if (accounts[j].phone === target.phone) { exists = true; break; }
+    }
+    if (!exists) {
+      var pwd = (target.phone || '').slice(-6) || '123456';
+      accounts.push({
+        id: 'acc_' + Date.now(),
+        account: target.phone,
+        phone: target.phone,
+        nickName: target.name || target.phone,
+        role: '村民',
+        village: target.village || myVillage,
+        password: pwd,
+        createTime: Date.now(),
+        status: 'active'
+      });
+      console.log('[入驻审核] 创建村民账号:', target.phone, '密码:', pwd);
+    }
+    Storage.set('accounts', accounts);
+
+    // 同步到云端
+    syncToCloud(regs, accounts);
+
+    toast('✅ 审核通过！已创建村民账号（密码=' + (target.phone||'').slice(-6) + '）');
+    loadAndRender();
+  };
+
+  // 驳回村民入驻申请
+  window.rejectVillager = function(id) {
+    if (!confirm('确定驳回此入驻申请？')) return;
+    var regs = Storage.get('registrations', []);
+    for (var i = 0; i < regs.length; i++) {
+      if (regs[i].id === id) { regs[i].status = '已驳回'; break; }
+    }
+    Storage.set('registrations', regs);
+    syncToCloud(regs, Storage.get('accounts', []));
+    toast('已驳回');
+    loadAndRender();
+  };
+
+  // 同步到云端
+  function syncToCloud(regs, accounts) {
+    if (typeof cloudSave === 'function') {
+      var cloudData = {
+        registrations: regs,
+        accounts: accounts,
+        villages: Storage.get('villages', []),
+        products: Storage.get('products', []),
+        food: Storage.get('food', []),
+        camps: Storage.get('camps', []),
+        announcements: Storage.get('announcements', []),
+        messages: Storage.get('messages', [])
+      };
+      cloudSave(cloudData).then(function() {
+        console.log('[审核] 云端同步成功');
+      }).catch(function(e) {
+        console.log('[审核] 云端同步失败:', e);
+      });
+    }
+  }
+
+  loadAndRender();
+})();
+</script>
+</body>
+</html>

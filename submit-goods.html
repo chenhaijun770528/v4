@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>提交上架申请</title>
+  <style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5; font-size: 14px; }
+.header { position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #2E7D32, #4CAF50); color: white; padding: 12px 16px; z-index: 100; display: flex; align-items: center; justify-content: space-between; }
+.header-title { font-size: 18px; font-weight: bold; }
+.header-back { font-size: 20px; cursor: pointer; padding: 4px 8px; }
+.container { padding: 60px 16px 80px; max-width: 750px; margin: 0 auto; }
+.tabs { display: flex; background: white; border-radius: 10px; overflow: hidden; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.tab { flex: 1; text-align: center; padding: 10px; font-size: 14px; cursor: pointer; color: #666; border-bottom: 2px solid transparent; }
+.tab.active { color: #2E7D32; border-bottom-color: #2E7D32; font-weight: bold; background: #E8F5E9; }
+.form-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 14px; color: #333; margin-bottom: 6px; font-weight: 600; }
+.form-input { width: 100%; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none; }
+.form-input:focus { border-color: #2E7D32; }
+textarea.form-input { resize: vertical; min-height: 80px; }
+.village-tag { background: #E8F5E9; border: 1px solid #A5D6A7; border-radius: 20px; padding: 6px 14px; font-size: 14px; color: #2E7D32; display: inline-block; margin-bottom: 12px; }
+.btn-primary { width: 100%; padding: 14px; background: #2E7D32; color: white; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; }
+.btn-primary:disabled { background: #81C784; cursor: not-allowed; }
+.img-upload { border: 2px dashed #e0e0e0; border-radius: 8px; padding: 16px; text-align: center; cursor: pointer; color: #999; font-size: 14px; margin-bottom: 16px; }
+.img-upload:hover { border-color: #2E7D32; }
+.img-preview { max-width: 100%; max-height: 200px; border-radius: 8px; margin-top: 8px; display: block; }
+.notice { background: #FFF8E1; border: 1px solid #FFE082; border-radius: 8px; padding: 12px; font-size: 13px; color: #F57C00; margin-bottom: 16px; }
+.record-title { font-size: 15px; font-weight: bold; color: #333; margin: 20px 0 10px; }
+.record-card { background: white; border-radius: 10px; padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.record-name { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 4px; }
+.record-row { font-size: 13px; color: #666; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; margin-left: 6px; }
+.badge-orange { background: #FFF3E0; color: #E65100; }
+.badge-green { background: #E8F5E9; color: #2E7D32; }
+.badge-red { background: #FFEBEE; color: #C62828; }
+.toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.75); color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 9999; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="header-back" onclick="location.href='profile.html'">←</span>
+    <span class="header-title">📦 提交上架申请</span>
+    <span style="width:40px"></span>
+  </div>
+
+  <div class="container">
+    <div id="accessCheck">
+      <div style="text-align:center;padding:40px;color:#999;">检查权限中...</div>
+    </div>
+  </div>
+
+<script src="cloud_db.js"></script>
+<script>
+(function() {
+  var container = document.getElementById('accessCheck');
+
+  var Storage = {
+    get: function(k, def) {
+      try { var v = localStorage.getItem('village_' + k); return v ? JSON.parse(v) : def; }
+      catch(e) { return def; }
+    },
+    set: function(k, v) {
+      try { localStorage.setItem('village_' + k, JSON.stringify(v)); return true; }
+      catch(e) { return false; }
+    }
+  };
+
+  var user = Storage.get('user', null);
+
+  if (!user) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;"><div style="font-size:48px;">🔒</div><div style="color:#666;margin:12px 0;">请先登录</div><button class="btn-primary" style="max-width:200px;margin:0 auto;" onclick="location.href=\'login.html\'">去登录</button></div>';
+    return;
+  }
+  if (user.role !== '村民') {
+    container.innerHTML = '<div style="text-align:center;padding:40px;"><div style="font-size:48px;">🚫</div><div style="color:#666;margin:12px 0;">仅已入驻村民可提交上架申请</div><button style="background:none;border:none;color:#2E7D32;cursor:pointer;" onclick="location.href=\'profile.html\'">返回个人中心</button></div>';
+    return;
+  }
+
+  var myVillage = user.village || '';
+  var curType = 'product';
+  var currentImgBase64 = '';
+  var editId = null;
+
+  var typeConfig = {
+    product: { name: '农产品', emoji: '🥬', key: 'product_applications', priceLabel: '价格（元）', unitLabel: '单位', unitHint: '如：袋、斤、只、箱' },
+    food: { name: '美食', emoji: '🍜', key: 'food_applications', priceLabel: '价格（元）', unitLabel: '单位', unitHint: '如：份、碗、盘' },
+    camp: { name: '露营地', emoji: '⛺', key: 'camp_applications', priceLabel: '价格（元/晚）', unitLabel: '单位', unitHint: '如：晚、帐篷位、天' }
+  };
+
+  function toast(msg) {
+    var t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function() { t.remove(); }, 2000);
+  }
+
+  function esc(s) { if (s == null) return ''; return String(s).replace(/&/,'&amp;').replace(/</,'&lt;').replace(/>/,'&gt;'); }
+
+  function renderPage() {
+    var cfg = typeConfig[curType];
+    var html = '<div class="village-tag">🏘️ 我的村庄：' + esc(myVillage) + '</div>';
+    html += '<div class="notice">⚠️ 提交后需本村村主任审核通过才能在首页展示，请耐心等待。</div>';
+    html += '<div class="tabs">';
+    ['product','food','camp'].forEach(function(t) {
+      html += '<div class="tab' + (curType === t ? ' active' : '') + '" onclick="switchTab(\'' + t + '\')">' + typeConfig[t].emoji + ' ' + typeConfig[t].name + '</div>';
+    });
+    html += '</div>';
+    html += '<div class="form-card">';
+    html += '<input type="hidden" id="editApplyId" value="">';
+    html += '<div class="form-group"><label class="form-label">' + cfg.emoji + ' ' + cfg.name + '名称 *</label><input class="form-input" id="applyName" placeholder="请输入' + cfg.name + '名称"></div>';
+    html += '<div class="form-group"><label class="form-label">💰 ' + cfg.priceLabel + ' *</label><input class="form-input" id="applyPrice" type="number" placeholder="请输入价格"></div>';
+    html += '<div class="form-group"><label class="form-label">📏 ' + cfg.unitLabel + ' *</label><input class="form-input" id="applyUnit" placeholder="' + cfg.unitHint + '"></div>';
+    html += '<div class="form-group"><label class="form-label">📝 描述介绍</label><textarea class="form-input" id="applyDesc" placeholder="请输入描述介绍，让更多人了解您的' + cfg.name + '"></textarea></div>';
+    html += '<div class="form-group"><label class="form-label">📷 图片（选填）</label>';
+    html += '<div class="img-upload" id="imgUploadBox" onclick="document.getElementById(\'imgInput\').click()">';
+    html += '<div style="font-size:32px;margin-bottom:6px;">📷</div><div>点击上传图片</div></div>';
+    html += '<input type="file" id="imgInput" accept="image/*" style="display:none" onchange="handleImg(this)">';
+    html += '<img id="imgPreview" class="img-preview" style="display:none"></img>';
+    html += '</div>';
+    html += '<button class="btn-primary" id="submitBtn" onclick="submitApply()">提交申请</button>';
+    html += '</div>';
+    html += '<div id="myRecordSection"></div>';
+    html += '<div style="text-align:center;margin-top:12px;"><button style="background:none;border:none;color:#2E7D32;font-size:14px;cursor:pointer;padding:8px;" onclick="location.href=\'profile.html\'">← 返回个人中心</button></div>';
+    container.innerHTML = html;
+    loadMyRecords();
+  }
+
+  window.switchTab = function(tab) {
+    curType = tab;
+    currentImgBase64 = '';
+    editId = null;
+    renderPage();
+  };
+
+  window.handleImg = function(input) {
+    if (!input.files || !input.files[0]) return;
+    var file = input.files[0];
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      // 压缩到 800px, quality 0.7
+      var img = new Image();
+      img.onload = function() {
+        var canvas = document.createElement('canvas');
+        var MAX = 800;
+        var w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        currentImgBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        var preview = document.getElementById('imgPreview');
+        if (preview) { preview.src = currentImgBase64; preview.style.display = 'block'; }
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  function submitApply() {
+    var name = document.getElementById('applyName').value.trim();
+    var price = document.getElementById('applyPrice').value.trim();
+    var unit = document.getElementById('applyUnit').value.trim();
+    var desc = document.getElementById('applyDesc').value.trim();
+    if (!name) { toast('请输入名称'); return; }
+    if (!price) { toast('请输入价格'); return; }
+    if (!unit) { toast('请输入单位'); return; }
+
+    var btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = '提交中...';
+
+    var cfg = typeConfig[curType];
+    var key = cfg.key;
+    var apps = Storage.get(key, []);
+
+    // 检查是否已存在同名待审核申请
+    var duplicate = apps.find(function(a) {
+      return a.name === name && a.village === myVillage && a.status === '待村主任审核' && a.userPhone === user.phone;
+    });
+    if (duplicate) {
+      toast('您已提交过同名申请，请等待审核');
+      btn.disabled = false; btn.textContent = '提交申请';
+      return;
+    }
+
+    var newApp = {
+      id: 'ap' + Date.now(),
+      userId: user.id || user.account || '',
+      userName: user.nickName || user.account || '',
+      userPhone: user.phone || '',
+      name: name,
+      price: price,
+      unit: unit,
+      desc: desc,
+      village: myVillage,
+      img: currentImgBase64 || '',
+      status: '待村主任审核',
+      createTime: Date.now()
+    };
+    apps.push(newApp);
+    Storage.set(key, apps);
+
+    toast('✅ 申请已提交，等待村主任审核');
+    currentImgBase64 = '';
+    btn.disabled = false;
+    btn.textContent = '提交申请';
+    loadMyRecords();
+  }
+
+  function loadMyRecords() {
+    var section = document.getElementById('myRecordSection');
+    if (!section) return;
+    var cfg = typeConfig[curType];
+    var key = cfg.key;
+    var myApps = Storage.get(key, []).filter(function(a) {
+      return a.userPhone === user.phone || a.userId === user.id;
+    });
+
+    if (myApps.length === 0) { section.innerHTML = ''; return; }
+
+    var html = '<div class="record-title">📋 我的申请记录</div>';
+    myApps.slice(0, 10).forEach(function(a) {
+      var badge = a.status === '待村主任审核'
+        ? '<span class="badge badge-orange">⏳ 待审核</span>'
+        : a.status === '已通过'
+        ? '<span class="badge badge-green">✅ 已通过</span>'
+        : '<span class="badge badge-red">❌ 已驳回</span>';
+      html += '<div class="record-card">' +
+        '<div class="record-name">' + esc(a.name) + ' ' + badge + '</div>' +
+        '<div class="record-row">💰 ' + esc(a.price) + '元/' + esc(a.unit) + ' | 村庄：' + esc(a.village) + '</div>' +
+        '<div class="record-row">📝 ' + esc(a.desc || '无描述') + '</div></div>';
+    });
+    section.innerHTML = html;
+  }
+
+  renderPage();
+})();
+</script>
+</body>
+</html>

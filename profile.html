@@ -1,196 +1,281 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>个人中心</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, sans-serif; background: #f5f5f5; color: #333; }
-.header { background: linear-gradient(135deg, #2E7D32, #4CAF50); color: white; padding: 30px 16px; text-align: center; }
-.avatar { width: 70px; height: 70px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.3); font-size: 36px; line-height: 70px; background: rgba(255,255,255,0.2); margin: 0 auto 10px; }
-.nickname { font-size: 18px; font-weight: bold; }
-.role-badge { display: inline-block; background: rgba(255,255,255,0.25); padding: 6px 14px; border-radius: 14px; font-size: 13px; margin-top: 10px; }
-.role-badge.pending { background: #FFF3E0; color: #E65100; }
-.container { padding: 16px; }
-.card { background: white; border-radius: 12px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
-.menu-item { display: flex; align-items: center; padding: 14px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
-.menu-item:last-child { border-bottom: none; }
-.menu-item.disabled { opacity: 0.5; cursor: not-allowed; }
-.menu-icon { font-size: 24px; margin-right: 12px; width: 30px; text-align: center; }
-.menu-text { flex: 1; font-size: 15px; }
-.menu-arrow { color: #ccc; font-size: 20px; }
-.btn { background: #2E7D32; color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 15px; width: 100%; cursor: pointer; margin: 8px 0; }
-.btn:hover { background: #1B5E20; }
-.status { padding: 12px; border-radius: 8px; margin: 8px 0; font-size: 14px; line-height: 1.6; word-break: break-all; }
-.status-ok { background: #E8F5E9; color: #2E7D32; }
-.status-err { background: #FFEBEE; color: #F44336; }
-.status-info { background: #E3F2FD; color: #1976D2; }
-.status-warn { background: #FFF3E0; color: #E65100; }
-h3 { font-size: 14px; color: #666; margin-bottom: 10px; font-weight: normal; }
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;min-height:100vh;}
 </style>
 </head>
 <body>
-<div class="header">
-  <div class="avatar">&#128100;</div>
-  <div class="nickname" id="nickname">加载中...</div>
-  <div class="role-badge" id="roleBadge">&#10068; 未选择角色</div>
-</div>
-<div class="container">
-  <div class="card">
-    <h3>云端同步</h3>
-    <div id="status" class="status status-info">准备同步...</div>
-    <button class="btn" onclick="doSync()">&#128260; 重新同步云端角色</button>
-  </div>
-  <div class="card">
-    <div class="menu-item" id="selectRoleMenu" onclick="goSelectRole()">
-      <div class="menu-icon">&#127919;</div>
-      <div class="menu-text">选择/注册角色</div>
-      <div class="menu-arrow">&#8250;</div>
-    </div>
-    <div class="menu-item" onclick="location.href='index.html'">
-      <div class="menu-icon">&#127968;</div>
-      <div class="menu-text">返回首页</div>
-      <div class="menu-arrow">&#8250;</div>
-    </div>
-    <div class="menu-item" onclick="doLogout()">
-      <div class="menu-icon">&#128682;</div>
-      <div class="menu-text" style="color:#F44336">退出登录</div>
-      <div class="menu-arrow">&#8250;</div>
-    </div>
-  </div>
-</div>
+<div id="mainContent"></div>
 <script>
-var SUPABASE_URL = 'https://eivqbbxyllsorbvgqsju.supabase.co';
-var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpdnFiYnh5bGxzb3Jidmdxc2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MTIzMDksImV4cCI6MjA5ODI4ODMwOX0.QeKnbo1cgA0yGMOEydML3PNXatH1V1QXfW0hyxRy7KY';
-var roleNameMap = {'村主任':'township','村民':'villager','游客':'tourist','超市老板':'market','建筑公司':'construction','建筑园林设计师':'landscape','园林设计师':'landscape','乡村教师':'teacher','大学生':'student','律师':'lawyer','货运司机':'truck','顺风车':'carpool','按摩技师':'massage'};
-var roleNameMapRev = {'township':'村主任','villager':'村民','tourist':'游客','market':'超市老板','construction':'建筑公司','landscape':'园林设计师','teacher':'乡村教师','student':'大学生','lawyer':'律师','truck':'货运司机','carpool':'顺风车','massage':'按摩技师'};
+// ===================================================================
+// profile.html - 个人中心
+// 核心原则：
+// 1. 每次打开页面，先从云端拉取最新数据覆盖本地，再渲染
+// 2. 显示所有状态的申请（待审核/已通过/已拒绝）
+// 3. 管理员审核后，其他设备重新打开此页即可看到最新状态
+// ===================================================================
+(function() {
+  // 避免重复加载
+  if (window._profileInited) return;
+  window._profileInited = true;
 
-function getUser() {
-  var keys = ['village_user', 'village_current_user', 'user'];
-  for (var i = 0; i < keys.length; i++) {
-    try {
-      var u = JSON.parse(localStorage.getItem(keys[i]) || 'null');
-      if (u && (u.username || u.id || u.phone || u.name)) return u;
-    } catch(e) {}
-  }
-  return null;
-}
+  var SUPABASE_URL = 'https://eivqbbxyllsorbvgqsju.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpdnFiYnh5bGxzb3Jidmdxc2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MTIzMDksImV4cCI6MjA5ODI4ODMwOX0.QeKnbo1cgA0yGMOEydML3PNXatH1V1QXfW0hyxRy7KY';
 
-function setUser(u) {
-  localStorage.setItem('village_user', JSON.stringify(u));
-  localStorage.setItem('village_current_user', JSON.stringify(u));
-  localStorage.setItem('user', JSON.stringify(u));
-}
-
-function updateUI(u) {
-  document.getElementById('nickname').textContent = u.username || u.id || u.name || '用户';
-}
-
-function setRoleBadge(text, isPending) {
-  var el = document.getElementById('roleBadge');
-  el.innerHTML = text;
-  if (isPending) el.className = 'role-badge pending';
-  else el.className = 'role-badge';
-}
-
-function setStatus(msg, type) {
-  var el = document.getElementById('status');
-  el.className = 'status status-' + (type || 'info');
-  el.innerHTML = msg;
-}
-
-function goSelectRole() {
-  var u = getUser();
-  if (u && u._hasPending) {
-    if (!confirm('您已有待审核的申请，是否仍要重新选择？')) return;
-  }
-  location.href = 'select-role.html';
-}
-
-function doSync() {
-  var u = getUser();
-  if (!u) { setStatus('❌ 未登录，请先登录', 'err'); return; }
-  setStatus('⏳ 正在从云端获取数据...', 'info');
-  fetch(SUPABASE_URL + '/rest/v1/village_data?id=eq.init&select=data', {
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(rows) {
-    if (!rows || rows.length === 0 || !rows[0].data) { setStatus('❌ 云端无数据', 'err'); return; }
-    var data = rows[0].data;
-    var accounts = data.accounts || [];
-    var regs = data.registrations || [];
-    var myInfo = null;
-    var pendingReg = null;
-    
-    // 1. 在 accounts 里找已批准的角色
-    for (var i = 0; i < accounts.length; i++) {
-      var a = accounts[i];
-      if (a.phone === u.phone || a.id === u.id || a.username === u.username || a.id === u.username || a.username === u.id) {
-        myInfo = a; break;
-      }
+  var Storage = {
+    get: function(k, def) {
+      try { var v = localStorage.getItem('village_' + k); return v ? JSON.parse(v) : def; } catch(e) { return def; }
+    },
+    set: function(k, v) {
+      try { localStorage.setItem('village_' + k, JSON.stringify(v)); } catch(e) {}
     }
-    
-    // 2. 在 registrations 里找已通过的申请
-    if (!myInfo) {
-      for (var j = 0; j < regs.length; j++) {
-        var r = regs[j];
-        if ((r.phone === u.phone || r.account === u.account || r.account === u.username || r.account === u.id) && r.status === '已通过') {
-          myInfo = { role: r.role, name: r.name }; break;
+  };
+
+  // ===== 步骤1: 从云端同步所有数据到本地 =====
+  function syncFromCloud(callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', SUPABASE_URL + '/rest/v1/village_data?id=eq.init&select=data', true);
+    xhr.setRequestHeader('apikey', SUPABASE_KEY);
+    xhr.setRequestHeader('Authorization', 'Bearer ' + SUPABASE_KEY);
+    xhr.timeout = 8000;
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        if (xhr.status === 200) {
+          try {
+            var arr = JSON.parse(xhr.responseText);
+            if (arr.length > 0 && arr[0].data) {
+              var cloud = arr[0].data;
+              // 用云端数据覆盖本地缓存（关键！）
+              if (cloud.registrations) Storage.set('registrations', cloud.registrations);
+              if (cloud.accounts) Storage.set('accounts', cloud.accounts);
+              if (cloud.villages) Storage.set('villages', cloud.villages);
+              if (cloud.announcements) Storage.set('announcements', cloud.announcements);
+              console.log('[profile] 云端同步成功，registrations=' + (cloud.registrations ? cloud.registrations.length : 0));
+            }
+          } catch(e) {
+            console.log('[profile] 云端解析失败:', e.message);
+          }
+        } else {
+          console.log('[profile] 云端请求失败:', xhr.status);
+        }
+        callback();
+      }
+    };
+    xhr.onerror = function() { console.log('[profile] 云端网络错误'); callback(); };
+    xhr.ontimeout = function() { console.log('[profile] 云端请求超时'); callback(); };
+    xhr.send();
+  }
+
+  // ===== 步骤2: 渲染页面（从本地读取数据） =====
+  function renderPage() {
+    var mainEl = document.getElementById('mainContent');
+    if (!mainEl) return;
+
+    var currentUser = Storage.get('user', null);
+
+    // --- 未登录状态 ---
+    if (!currentUser) {
+      mainEl.innerHTML = '<div style="padding:60px 20px;text-align:center;color:#999;">' +
+        '<div style="font-size:48px;margin-bottom:16px;">🔒</div>' +
+        '<p style="font-size:16px;margin-bottom:24px;">请先登录后再访问个人中心</p>' +
+        '<button onclick="location.href=\'login.html\'" style="padding:12px 32px;background:#2E7D32;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer;">去登录</button>' +
+        '</div>';
+      return;
+    }
+
+    // --- 已登录，读取本地数据（已被云端同步覆盖） ---
+    var allRegs = Storage.get('registrations', []);
+    var allAccounts = Storage.get('accounts', []);
+    var userAccount = (currentUser.username || currentUser.account || currentUser.id || '').toLowerCase();
+    var userPhone = currentUser.phone || '';
+
+    // 匹配当前用户的申请记录
+    var myRegs = allRegs.filter(function(item) {
+      var regAccount = (item.account || item.username || '').toLowerCase();
+      var regPhone = item.phone || '';
+      return (regPhone && regPhone === userPhone) || (regAccount && regAccount === userAccount);
+    });
+
+    // ===== 核心修复：从云端账号库中查找自己的正式账号，同步角色 =====
+    // 管理员审核通过后，会在 accounts 里创建正式账号（含角色）
+    // 每次打开个人中心，用正式账号的角色覆盖当前用户角色（持久生效）
+    if (allAccounts.length > 0) {
+      var myFormalAccount = null;
+      for (var ai = 0; ai < allAccounts.length; ai++) {
+        var accPhone = allAccounts[ai].phone || '';
+        var accAccount = (allAccounts[ai].account || allAccounts[ai].username || '').toLowerCase();
+        if ((userPhone && accPhone === userPhone) || (userAccount && accAccount === userAccount)) {
+          myFormalAccount = allAccounts[ai];
+          break;
+        }
+      }
+      if (myFormalAccount) {
+        var formalRole = myFormalAccount.role || myFormalAccount.currentRole || '';
+        if (formalRole && currentUser.role !== formalRole) {
+          console.log('[profile] 从正式账号同步角色: ' + currentUser.role + ' -> ' + formalRole);
+          currentUser.role = formalRole;
+          currentUser.currentRole = formalRole;
+          Storage.set('user', currentUser);
         }
       }
     }
-    
-    // 3. 在 registrations 里找待审核的申请
-    if (!myInfo) {
-      for (var k = 0; k < regs.length; k++) {
-        var r2 = regs[k];
-        if ((r2.phone === u.phone || r2.account === u.account || r2.account === u.username || r2.account === u.id) && r2.status === '待审核') {
-          pendingReg = r2; break;
-        }
+
+    // ===== 从已通过的申请中同步用户角色（兜底） =====
+    // 如果有待审核通过的申请，用申请的角色更新登录用户的角色
+    var passedRegs = allRegs.filter(function(item) {
+      var regAccount = (item.account || item.username || '').toLowerCase();
+      var regPhone = item.phone || '';
+      return ((regPhone && regPhone === userPhone) || (regAccount && regAccount === userAccount)) && item.status === '已通过';
+    });
+    if (passedRegs.length > 0) {
+      // 用第一条已通过申请的角色更新用户角色
+      var realRole = passedRegs[0].role || passedRegs[0].type || '普通用户';
+      if (currentUser.role !== realRole) {
+        console.log('[profile] 角色同步：' + currentUser.role + ' -> ' + realRole);
+        currentUser.role = realRole;
+        currentUser.currentRole = realRole;
+        Storage.set('user', currentUser); // 持久化到本地
       }
     }
-    
-    if (myInfo && myInfo.role) {
-      var newRole = roleNameMap[myInfo.role] || myInfo.role;
-      u.currentRole = newRole;
-      u._hasPending = false;
-      setUser(u);
-      updateUI(u);
-      setRoleBadge('&#127917; ' + (roleNameMapRev[newRole] || newRole), false);
-      setStatus('✅ 同步成功！<br>角色: <b>' + myInfo.role + '</b>', 'ok');
-    } else if (pendingReg) {
-      u._hasPending = true;
-      u._pendingRole = pendingReg.role;
-      setUser(u);
-      updateUI(u);
-      setRoleBadge('&#9203; ' + pendingReg.role + ' (审核中)', true);
-      setStatus('&#9203; 您的 <b>' + pendingReg.role + '</b> 申请正在审核中，请耐心等待管理员审核。<br><br>无需重复注册！', 'warn');
+
+    // 当前角色（已包含审核通过后的同步角色）
+    var currentRole = currentUser.currentRole || currentUser.role || '普通用户';
+
+    // 构建HTML
+    var html = '';
+
+    // --- 用户信息卡片 ---
+    html += '<div style="background:linear-gradient(135deg,#2E7D32,#4CAF50);color:#fff;padding:24px 20px;border-radius:0 0 24px 24px;text-align:center;">';
+    html += '<div style="font-size:48px;margin-bottom:8px;">👤</div>';
+    html += '<div style="font-size:18px;font-weight:bold;margin-bottom:4px;">' + (currentUser.nickName || currentUser.username || '用户') + '</div>';
+    var roleBg = currentRole !== '普通用户' ? '#fff;color:#2E7D32' : '#rgba(255,255,255,0.3);color:#fff';
+    html += '<span style="display:inline-block;padding:4px 16px;border-radius:20px;font-size:13px;background:' + roleBg + ';">' + currentRole + '</span>';
+    html += '</div>';
+
+    // --- 云端同步状态提示 ---
+    html += '<div style="text-align:center;padding:8px;font-size:12px;color:#999;background:#f9f9f9;">☁️ 每次打开自动同步云端最新数据</div>';
+
+    // --- 申请记录卡片 ---
+    if (myRegs.length > 0) {
+      html += '<div style="padding:16px;">';
+      myRegs.forEach(function(reg) {
+        var statusClass = reg.status === '已通过' ? 'background:#E8F5E9;color:#2E7D32' :
+                          reg.status === '已拒绝' ? 'background:#FFEBEE;color:#F44336' :
+                          'background:#FFF8E1;color:#F57C00';
+        var statusIcon = reg.status === '已通过' ? '✅' :
+                         reg.status === '已拒绝' ? '❌' : '⏳';
+        var timeStr = reg.createdAt ? (function() {
+          var d = new Date(reg.createdAt);
+          return isNaN(d.getTime()) ? '' : d.toLocaleString('zh-CN');
+        })() : '';
+
+        html += '<div style="background:#fff;border-radius:12px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.08);">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+        html += '<span style="font-weight:bold;font-size:15px;color:#333;">' + (reg.role || reg.type || '未知角色') + '</span>';
+        html += '<span style="padding:2px 10px;border-radius:12px;font-size:12px;' + statusClass + ';">' + statusIcon + ' ' + (reg.status || '未知') + '</span>';
+        html += '</div>';
+        if (reg.village) html += '<div style="font-size:13px;color:#666;margin-bottom:4px;">🏠 村庄: ' + reg.village + '</div>';
+        if (reg.name) html += '<div style="font-size:13px;color:#666;margin-bottom:4px;">👤 姓名: ' + reg.name + '</div>';
+        if (timeStr) html += '<div style="font-size:12px;color:#999;">🕐 申请时间: ' + timeStr + '</div>';
+        if (reg.status === '已通过') {
+          html += '<div style="margin-top:8px;padding:8px;background:#E8F5E9;border-radius:6px;font-size:13px;color:#2E7D32;">🎉 恭喜！您的申请已审核通过！</div>';
+        } else if (reg.status === '已拒绝') {
+          html += '<div style="margin-top:8px;padding:8px;background:#FFEBEE;border-radius:6px;font-size:13px;color:#F44336;">😢 很遗憾，您的申请未通过审核</div>';
+        } else {
+          html += '<div style="margin-top:8px;padding:8px;background:#FFF8E1;border-radius:6px;font-size:13px;color:#F57C00;">⏳ 您的申请正在审核中，请耐心等待本村村主任处理</div>';
+        }
+        html += '</div>';
+      });
+      html += '</div>';
     } else {
-      u._hasPending = false;
-      setUser(u);
-      updateUI(u);
-      setRoleBadge('&#10068; 未选择角色', false);
-      setStatus('❌ 云端没找到您的角色或申请<br>本地用户: ' + JSON.stringify(u).substring(0, 200), 'err');
+      html += '<div style="padding:32px 20px;text-align:center;color:#999;">' +
+        '<div style="font-size:40px;margin-bottom:12px;">📝</div>' +
+        '<p style="font-size:14px;margin-bottom:16px;">您还没有提交过角色申请</p>' +
+        '<button onclick="location.href=\'index.html\'" style="padding:10px 24px;background:#2E7D32;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer;">去选择一个角色</button>' +
+        '</div>';
     }
-  })
-  .catch(function(err) { setStatus('❌ 网络错误: ' + (err.message || err), 'err'); });
-}
 
-function doLogout() {
-  if (confirm('确定要退出登录吗？')) {
-    localStorage.removeItem('village_user');
-    localStorage.removeItem('village_current_user');
-    localStorage.removeItem('user');
-    location.href = 'login.html';
+    // --- 快捷菜单 ---
+    html += '<div style="padding:0 16px;">';
+    html += '<div style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);">';
+
+    var menus = [
+      { icon: '🏠', text: '返回首页', action: "location.href='index.html'" }
+    ];
+    // 村主任专属菜单
+    if (currentRole === '村主任') {
+      menus.push({ icon: '👥', text: '本村入驻审核', action: "location.href='audit-villager.html'" });
+      menus.push({ icon: '📦', text: '本村商品审核', action: "location.href='audit-goods.html'" });
+    }
+    // 村民专属菜单
+    if (currentRole === '村民') {
+      menus.push({ icon: '✍️', text: '提交上架申请', action: "location.href='submit-goods.html'" });
+    }
+    // 通用菜单
+    menus.push({ icon: '🔄', text: '手动刷新云端数据', action: "manualRefresh()" });
+    menus.push({ icon: '🚪', text: '退出登录', action: "doLogout()" });
+    menus.forEach(function(menu) {
+      html += '<div onclick="' + menu.action + '" style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f0f0f0;cursor:pointer;font-size:14px;color:#333;">' +
+        '<span><span style="font-size:18px;margin-right:10px;">' + menu.icon + '</span>' + menu.text + '</span>' +
+        '<span style="color:#ccc;font-size:18px;">›</span>' +
+        '</div>';
+    });
+    html += '</div>';
+    html += '</div>';
+
+    mainEl.innerHTML = html;
   }
-}
 
-window.onload = function() {
-  var u = getUser();
-  if (u) { updateUI(u); doSync(); } else { setStatus('❌ 未登录', 'err'); }
-};
+  // ===== 步骤3: 手动刷新（用户点击按钮时） =====
+  window.manualRefresh = function() {
+    var mainEl = document.getElementById('mainContent');
+    if (mainEl) mainEl.innerHTML = '<div style="padding:40px;text-align:center;color:#2E7D32;">🔄 正在同步云端数据...</div>';
+    syncFromCloud(function() {
+      renderPage();
+    });
+  };
+
+  // ===== 步骤4: 退出登录 =====
+  window.doLogout = function() {
+    if (confirm('确定要退出登录吗？')) {
+      Storage.set('user', null);
+      location.href = 'login.html';
+    }
+  };
+
+  // ===== 步骤5: 初始化 =====
+  function init() {
+    var mainEl = document.getElementById('mainContent');
+    if (!mainEl) {
+      mainEl = document.createElement('div');
+      mainEl.id = 'mainContent';
+      document.body.appendChild(mainEl);
+    }
+    // 先显示加载状态
+    mainEl.innerHTML = '<div style="padding:60px 20px;text-align:center;color:#2E7D32;">' +
+      '<div style="font-size:32px;margin-bottom:12px;">☁️</div>' +
+      '<div style="font-size:14px;">正在同步云端数据...</div>' +
+      '<div style="font-size:12px;color:#999;margin-top:8px;">请稍候</div>' +
+      '</div>';
+
+    // 先同步云端，再渲染（核心！）
+    syncFromCloud(function() {
+      renderPage();
+    });
+  }
+
+  // 等待 DOM 加载
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
 </script>
 </body>
 </html>

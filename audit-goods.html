@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>本村商品审核</title>
+  <style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #f5f5f5; font-size: 14px; }
+.header { position: fixed; top: 0; left: 0; right: 0; background: linear-gradient(135deg, #2E7D32, #4CAF50); color: white; padding: 12px 16px; z-index: 100; display: flex; align-items: center; justify-content: space-between; }
+.header-title { font-size: 18px; font-weight: bold; }
+.header-back { font-size: 20px; cursor: pointer; padding: 4px 8px; }
+.container { padding: 60px 16px 80px; max-width: 750px; margin: 0 auto; }
+.tabs { display: flex; background: white; border-radius: 10px; overflow: hidden; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.tab { flex: 1; text-align: center; padding: 10px; font-size: 14px; cursor: pointer; color: #666; border-bottom: 2px solid transparent; }
+.tab.active { color: #2E7D32; border-bottom-color: #2E7D32; font-weight: bold; background: #E8F5E9; }
+.empty { text-align: center; padding: 40px 0; color: #999; }
+.empty-icon { font-size: 48px; display: block; margin-bottom: 10px; }
+.card { background: white; border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.card-name { font-size: 15px; font-weight: bold; color: #333; }
+.card-row { font-size: 13px; color: #666; margin: 3px 0; }
+.card-row span { color: #2E7D32; font-weight: 600; }
+.img-thumb { width: 60px; height: 60px; border-radius: 6px; object-fit: cover; margin-right: 10px; vertical-align: middle; background: #f0f0f0; display: inline-block; text-align: center; line-height: 60px; font-size: 24px; }
+.btns { display: flex; gap: 8px; margin-top: 8px; }
+.btn-ok { flex: 1; padding: 8px; background: #4CAF50; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+.btn-no { flex: 1; padding: 8px; background: #EF5350; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+.notice-bar { background: #E3F2FD; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: #1565C0; }
+.loading { text-align: center; padding: 40px; color: #999; }
+.toast { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.75); color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 9999; }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold; margin-left: 6px; }
+.badge-orange { background: #FFF3E0; color: #E65100; }
+.badge-green { background: #E8F5E9; color: #2E7D32; }
+.badge-red { background: #FFEBEE; color: #C62828; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="header-back" onclick="location.href='profile.html'">←</span>
+    <span class="header-title">📦 本村商品审核</span>
+    <span style="width:40px"></span>
+  </div>
+
+  <div class="container" id="app">
+    <div class="loading">加载中...</div>
+  </div>
+
+<script src="cloud_db.js"></script>
+<script>
+(function() {
+  var Storage = {
+    get: function(k, def) {
+      try { var v = localStorage.getItem('village_' + k); return v ? JSON.parse(v) : def; }
+      catch(e) { return def; }
+    },
+    set: function(k, v) {
+      try { localStorage.setItem('village_' + k, JSON.stringify(v)); return true; }
+      catch(e) { return false; }
+    }
+  };
+
+  var user = Storage.get('user', null);
+  var app = document.getElementById('app');
+
+  if (!user) {
+    app.innerHTML = '<div class="empty"><div class="empty-icon">🔒</div>请先登录<div style="margin-top:12px;"><button class="btn-ok" onclick="location.href=\'login.html\'">去登录</button></div></div>';
+    return;
+  }
+  if (user.role !== '村主任') {
+    app.innerHTML = '<div class="empty"><div class="empty-icon">🚫</div>仅村主任可访问<div style="margin-top:12px;"><button class="btn-ok" onclick="location.href=\'profile.html\'">返回</button></div></div>';
+    return;
+  }
+
+  var myVillage = user.village || '';
+  var curTab = 'product';
+
+  function toast(msg) {
+    var t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function() { t.remove(); }, 2000);
+  }
+  function esc(s) { if (s == null) return ''; return String(s).replace(/&/,'&amp;').replace(/</,'&lt;').replace(/>/,'&gt;'); }
+  function fmtTime(ts) {
+    if (!ts) return '';
+    var d = new Date(ts);
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  // 三个申请列表的 storage key
+  var applyKeys = {
+    product: 'product_applications',
+    food: 'food_applications',
+    camp: 'camp_applications'
+  };
+  // 三个正式展示列表的 storage key
+  var showKeys = {
+    product: 'products',
+    food: 'food',
+    camp: 'camps'
+  };
+  var typeNames = { product: '🥬 农产品', food: '🍜 美食', camp: '⛺ 露营地' };
+  var typeEmoji = { product: '🥬', food: '🍜', camp: '⛺' };
+
+  function loadAndRender() {
+    if (typeof cloudLoad === 'function') {
+      cloudLoad().then(function(rows) {
+        var cd = { registrations:[],villages:[],accounts:[],products:[],food:[],camps:[],announcements:[],product_applications:[],food_applications:[],camp_applications:[] };
+        if (rows && rows.length > 0 && rows[0].data) cd = Object.assign(cd, rows[0].data);
+        // 同步到本地
+        Storage.set('product_applications', cd.product_applications || []);
+        Storage.set('food_applications', cd.food_applications || []);
+        Storage.set('camp_applications', cd.camp_applications || []);
+        Storage.set('products', cd.products || []);
+        Storage.set('food', cd.food || []);
+        Storage.set('camps', cd.camps || []);
+        renderTab(curTab, cd);
+      }).catch(function() { render(curTab); });
+    } else {
+      render(curTab);
+    }
+  }
+
+  function renderTab(tab, cloudData) {
+    var key = applyKeys[tab];
+    var showKey = showKeys[tab];
+    var apps = (cloudData && cloudData[key]) || Storage.get(key, []);
+
+    // 过滤：本村 + 待村主任审核
+    var pending = apps.filter(function(a) {
+      return (a.village || '') === myVillage && a.status === '待村主任审核';
+    });
+    var processed = apps.filter(function(a) {
+      return (a.village || '') === myVillage && a.status !== '待村主任审核';
+    });
+
+    var html = '<div class="tabs">';
+    ['product','food','camp'].forEach(function(t) {
+      html += '<div class="tab' + (tab === t ? ' active' : '') + '" onclick="switchTab(\'' + t + '\')">' + typeNames[t] + '</div>';
+    });
+    html += '</div>';
+    html += '<div class="notice-bar">🏘️ 管理村庄：' + esc(myVillage) + ' | 待审核：' + pending.length + ' 条</div>';
+
+    if (pending.length === 0) {
+      html += '<div class="empty"><div class="empty-icon">' + typeEmoji[tab] + '</div>暂无待审核的' + typeNames[tab] + '申请</div>';
+    } else {
+      pending.forEach(function(a) {
+        var imgHtml = a.img
+          ? '<img class="img-thumb" src="' + esc(a.img) + '" onerror="this.outerHTML=\'' + typeEmoji[tab] + '\'">'
+          : '<span class="img-thumb">' + typeEmoji[tab] + '</span>';
+        html += '<div class="card">' +
+          '<div style="display:flex;align-items:center;margin-bottom:8px;">' + imgHtml +
+          '<div><div class="card-name">' + esc(a.name || '?') + ' <span class="badge badge-orange">⏳ 待审核</span></div>' +
+          '<div class="card-row">💰 ' + esc(a.price || '?') + '元/' + esc(a.unit || '份') + '</div>' +
+          '<div class="card-row">👤 申请人：' + esc(a.userName || a.nickName || '?') + ' 📱 ' + esc(a.userPhone || a.phone || '') + '</div></div></div>' +
+          '<div class="card-row">📝 ' + esc(a.desc || '无描述') + '</div>' +
+          '<div class="card-row">⏰ ' + fmtTime(a.createTime || a.createdAt) + '</div>' +
+          '<div class="btns">' +
+          '<button class="btn-ok" onclick="passApply(\'' + esc(a.id||'') + '\',\'' + tab + '\')">✅ 通过</button>' +
+          '<button class="btn-no" onclick="rejectApply(\'' + esc(a.id||'') + '\',\'' + tab + '\')">❌ 驳回</button>' +
+          '</div></div>';
+      });
+    }
+
+    // 已处理
+    if (processed.length > 0) {
+      html += '<div style="font-size:13px;color:#999;margin:16px 0 8px;font-weight:bold;">已处理记录（' + processed.length + '条）</div>';
+      processed.slice(0, 5).forEach(function(a) {
+        var badge = a.status === '已通过' ? '<span class="badge badge-green">✅ 已通过</span>' : '<span class="badge badge-red">❌ 已驳回</span>';
+        html += '<div class="card" style="opacity:0.7;">' +
+          '<div class="card-name">' + esc(a.name||'?') + ' ' + badge + '</div>' +
+          '<div class="card-row">👤 ' + esc(a.userName||'') + ' | ' + fmtTime(a.createTime||a.createdAt) + '</div></div>';
+      });
+    }
+
+    html += '<div style="text-align:center;margin-top:16px;"><button class="btn-ok" style="background:#9E9E9E;max-width:200px;" onclick="loadAndRender()">🔄 刷新</button></div>';
+    html += '<div style="text-align:center;margin-top:8px;"><button style="background:none;border:none;color:#2E7D32;font-size:14px;cursor:pointer;padding:8px;" onclick="location.href=\'profile.html\'">← 返回</button></div>';
+    app.innerHTML = html;
+  }
+
+  function render(tab) {
+    renderTab(tab, null);
+  }
+
+  window.switchTab = function(tab) {
+    curTab = tab;
+    renderTab(tab, null);
+  };
+
+  // 通过上架申请
+  window.passApply = function(id, tab) {
+    if (!confirm('确定通过此上架申请？\n通过后将在首页[' + typeNames[tab] + ']板块展示。')) return;
+    var key = applyKeys[tab];
+    var showKey = showKeys[tab];
+    var apps = Storage.get(key, []);
+    var target = null;
+    for (var i = 0; i < apps.length; i++) {
+      if (apps[i].id == id) { target = apps[i]; apps[i].status = '已通过'; break; }
+    }
+    if (!target) { toast('未找到申请'); return; }
+    Storage.set(key, apps);
+
+    // 写入正式展示列表
+    var showList = Storage.get(showKey, []);
+    // 检查是否已存在
+    var exists = false;
+    for (var k = 0; k < showList.length; k++) {
+      if (showList[k].id == id) { exists = true; break; }
+    }
+    if (!exists) {
+      showList.push({
+        id: target.id,
+        name: target.name,
+        price: target.price,
+        unit: target.unit,
+        desc: target.desc || '',
+        img: target.img || '',
+        village: target.village || myVillage,
+        userName: target.userName || target.nickName || '',
+        userPhone: target.userPhone || target.phone || '',
+        sellerId: target.userId || '',
+        sellerName: target.userName || '',
+        stock: 999,
+        sales: 0,
+        createTime: Date.now()
+      });
+    }
+    Storage.set(showKey, showList);
+    toast('✅ 上架成功，首页可见');
+    syncToCloud(key, apps, showKey, showList);
+    renderTab(curTab, null);
+  };
+
+  // 驳回上架申请
+  window.rejectApply = function(id, tab) {
+    if (!confirm('确定驳回此上架申请？')) return;
+    var key = applyKeys[tab];
+    var apps = Storage.get(key, []);
+    for (var i = 0; i < apps.length; i++) {
+      if (apps[i].id == id) { apps[i].status = '已驳回'; break; }
+    }
+    Storage.set(key, apps);
+    toast('已驳回');
+    syncToCloud(key, apps, null, null);
+    renderTab(curTab, null);
+  };
+
+  function syncToCloud(applyKey, apps, showKey, showList) {
+    if (typeof cloudSave !== 'function') return;
+    var cd = {
+      registrations: Storage.get('registrations', []),
+      accounts: Storage.get('accounts', []),
+      villages: Storage.get('villages', []),
+      products: showKey === 'products' ? showList : Storage.get('products', []),
+      food: showKey === 'food' ? showList : Storage.get('food', []),
+      camps: showKey === 'camps' ? showList : Storage.get('camps', []),
+      product_applications: applyKey === 'product_applications' ? apps : Storage.get('product_applications', []),
+      food_applications: applyKey === 'food_applications' ? apps : Storage.get('food_applications', []),
+      camp_applications: applyKey === 'camp_applications' ? apps : Storage.get('camp_applications', []),
+      announcements: Storage.get('announcements', [])
+    };
+    cloudSave(cd).catch(function(e) { console.log('[审核] 云端同步失败:', e); });
+  }
+
+  loadAndRender();
+})();
+</script>
+</body>
+</html>
