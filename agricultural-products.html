@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -454,17 +454,9 @@ function loadProducts() {
     var allApps = Storage.get('product_applications', []);
     for (var ai = 0; ai < allApps.length; ai++) {
       var a = allApps[ai];
-      // 找到村长的村庄ID
-      var villages = Storage.get('villages', []);
-      var chiefVillageId = null;
-      for (var vi = 0; vi < villages.length; vi++) {
-        if (villages[vi].chief && villages[vi].chief.name === user.nickName) {
-          chiefVillageId = villages[vi].id;
-          break;
-        }
-      }
-      // 只显示本村且待审核的申请
-      if (a.villageId === chiefVillageId && a.status === 'waiting') {
+      // 鐢?user.village 鐩存帴杩囨护鏈潙鐢宠
+      var chiefVillage = user ? (user.village || '') : '';
+      if ((a.village || '') === chiefVillage && a.status === '寰呮潙涓讳换瀹℃牳') {
         pendingApps.push(a);
       }
     }
@@ -503,7 +495,7 @@ function loadProducts() {
         : '<div class="goods-img" style="background:#fff3e0;display:flex;align-items:center;justify-content:center;font-size:48px;">⏳</div>';
       card.innerHTML = imgHtml +
         '<div class="goods-info">' +
-        '<div class="goods-name" style="color:#FF9800;">[待审核] ' + item.data.name + '</div>' +
+        '<div class="goods-name" style="color:#FF9800;">待村主任审核] ' + (item.data.village||'') + ' - ' + item.data.name + '</div>' +
         '<div class="goods-price">¥' + item.data.price + '<span style="font-size:12px;color:#999;font-weight:normal;">/' + item.data.unit + '</span></div>' +
         '<div style="font-size:11px;color:#999;margin-top:2px;">申请人：' + item.data.userName + '</div>' +
         '<div style="display:flex;gap:4px;margin-top:4px;">' +
@@ -542,7 +534,7 @@ function loadProducts() {
 // ========== 村长审核功能 ==========
 
 // 通过申请
-function approveItem(appId) {
+function approveItem(appId) { var chiefVillage = (Storage.get('user',null)||{}).village||'';
   if (!confirm('确定通过此申请？通过后该农产品将上架。')) return;
 
   var apps = Storage.get('product_applications', []);
@@ -552,9 +544,10 @@ function approveItem(appId) {
     if (apps[i].id === appId) { app = apps[i]; appIdx = i; break; }
   }
   if (!app) { toast('申请不存在'); return; }
+  if((app.village||'')!==chiefVillage){toast('无权审核此申请');return;}
 
   // 更新申请状态
-  apps[appIdx].status = 'pass';
+  apps[appIdx].status = '已通过';
   apps[appIdx].updateTime = Date.now();
   Storage.set('product_applications', apps);
 
@@ -582,13 +575,14 @@ function approveItem(appId) {
 }
 
 // 拒绝申请
-function rejectItem(appId) {
+function rejectItem(appId) { var chiefVillage = (Storage.get('user',null)||{}).village||'';
   if (!confirm('确定拒绝此申请？')) return;
 
   var apps = Storage.get('product_applications', []);
   for (var i = 0; i < apps.length; i++) {
     if (apps[i].id === appId) {
-      apps[i].status = 'reject';
+      if((apps[i].village||'')!==chiefVillage){toast('无权审核此申请');return;}
+      apps[i].status = '已驳回';
       apps[i].updateTime = Date.now();
       break;
     }
@@ -855,7 +849,7 @@ function openMyApplications() {
       var card = document.createElement('div');
       card.className = 'app-card status-' + app.status;
 
-      var statusText = app.status === 'waiting' ? '待审核' : app.status === 'pass' ? '已通过' : '已拒绝';
+      var statusText = app.status === '待村主任审核' ? '待村主任审核' : app.status === '已通过' ? '已通过' : app.status === '已驳回' ? '已驳回' : app.status;
 
       var imgHtml = app.img
         ? '<img src="' + app.img + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:6px;" onerror="this.style.display=\'none\'">'

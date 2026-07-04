@@ -462,15 +462,9 @@ function loadCamps() {
   if (isVillageChief) {
     var allApps = Storage.get('camp_applications', []);
     var villages = Storage.get('villages', []);
-    var chiefVillageId = null;
-    for (var vi = 0; vi < villages.length; vi++) {
-      if (villages[vi].chief && villages[vi].chief.name === user.nickName) {
-        chiefVillageId = villages[vi].id;
-        break;
-      }
-    }
+    var chiefVillage = user ? (user.village || '') : '';
     for (var ai = 0; ai < allApps.length; ai++) {
-      if (allApps[ai].villageId === chiefVillageId && allApps[ai].status === 'waiting') {
+      if ((allApps[ai].village || '') === chiefVillage && allApps[ai].status === '待村主任审核') {
         pendingApps.push(allApps[ai]);
       }
     }
@@ -513,7 +507,7 @@ function loadCamps() {
       el.innerHTML =
         '<div style="position:relative;">' + imgHtml + '</div>' +
         '<div class="camp-info">' +
-        '<span class="pending-badge">待审核</span> ' +
+        '<span class="pending-badge">待村主任审核</span> ' +
         '<span class="camp-name" style="color:#FF9800;">' + item.data.name + '</span>' +
         '<div class="camp-desc">申请人：' + item.data.userName + ' | 村庄：' + item.data.village + '</div>' +
         '<div class="camp-desc">' + (item.data.desc || '') + '</div>' +
@@ -556,6 +550,7 @@ function loadCamps() {
 
 // 通过申请
 function approveItem(appId) {
+  var chiefVillage = (Storage.get('user',null)||{}).village||'';
   if (!confirm('确定通过此申请？通过后该露营基地将上架。')) return;
 
   var apps = Storage.get('camp_applications', []);
@@ -565,8 +560,9 @@ function approveItem(appId) {
     if (apps[i].id === appId) { app = apps[i]; appIdx = i; break; }
   }
   if (!app) { toast('申请不存在'); return; }
+  if((app.village||'')!==chiefVillage){toast('无权审核此申请');return;}
 
-  apps[appIdx].status = 'pass';
+  apps[appIdx].status = '已通过';
   apps[appIdx].updateTime = Date.now();
   Storage.set('camp_applications', apps);
 
@@ -591,12 +587,14 @@ function approveItem(appId) {
 
 // 拒绝申请
 function rejectItem(appId) {
+  var chiefVillage = (Storage.get('user',null)||{}).village||'';
   if (!confirm('确定拒绝此申请？')) return;
 
   var apps = Storage.get('camp_applications', []);
   for (var i = 0; i < apps.length; i++) {
     if (apps[i].id === appId) {
-      apps[i].status = 'reject';
+      if((apps[i].village||'')!==chiefVillage){toast('无权审核此申请');return;}
+      apps[i].status = '已驳回';
       apps[i].updateTime = Date.now();
       break;
     }
@@ -843,7 +841,7 @@ function openMyApplications() {
       var app = myApps[mi];
       var card = document.createElement('div');
       card.className = 'app-card status-' + app.status;
-      var statusText = app.status === 'waiting' ? '待审核' : app.status === 'pass' ? '已通过' : '已拒绝';
+      var statusText = app.status === '待村主任审核' ? '待村主任审核' : app.status === '已通过' ? '已通过' : app.status === '已驳回' ? '已驳回' : app.status;
       var tagsStr = app.tags ? app.tags.join(', ') : '';
       var imgHtml = app.img
         ? '<img src="' + app.img + '" style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:6px;" onerror="this.style.display=\'none\'">'
