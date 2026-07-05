@@ -174,11 +174,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
     target.status = '已通过';
     Storage.set('registrations', regs);
 
-    
-        // 在 accounts 里查找或创建村民账号
+    // 在 accounts 里查找或创建村民账号
     var accounts = Storage.get('accounts', []);
 
-    // 若该手机号已有待审核临时账号（register-villager.html写入），则更新为正式村民账号
+    // 若该手机号已有待审核临时账号，则更新为正式村民账号（包含密码兜底）
     var updated = false;
     for (var k = 0; k < accounts.length; k++) {
       if (accounts[k].phone === target.phone) {
@@ -186,6 +185,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
         accounts[k].village = target.village || myVillage;
         accounts[k].status = 'active';
         accounts[k].nickName = target.name || target.phone;
+        // 确保有密码（兼容旧账号）
+        if (!accounts[k].password) {
+          accounts[k].password = (target.phone || '').slice(-6) || '123456';
+        }
         updated = true;
         console.log('[入驻审核] 更新临时账号为村民:', target.phone);
         break;
