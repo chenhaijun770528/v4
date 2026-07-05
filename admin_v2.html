@@ -99,6 +99,75 @@ function saveToCloud(callback) {
   xhr.send(JSON.stringify({ data: cloudData }));
 }
 
+// ====== 审核通过：更新申请状态 + 创建正式账号 ======
+function cloudApproveRegistration(regId, callback) {
+  var targetReg = null;
+  for (var i = 0; i < cloudData.registrations.length; i++) {
+    if (cloudData.registrations[i].id === regId) {
+      targetReg = cloudData.registrations[i];
+      cloudData.registrations[i].status = '已通过';
+      break;
+    }
+  }
+
+  // 如果该手机号还没有账号，则创建正式账号
+  if (targetReg && targetReg.phone) {
+    if (!cloudData.accounts) cloudData.accounts = [];
+    var phone = targetReg.phone;
+    var accountExists = false;
+    for (var j = 0; j < cloudData.accounts.length; j++) {
+      if (cloudData.accounts[j].phone === phone) {
+        // 已有账号，只更新角色
+        cloudData.accounts[j].role = targetReg.role || targetReg.type || cloudData.accounts[j].role;
+        cloudData.accounts[j].currentRole = targetReg.role || targetReg.type || cloudData.accounts[j].currentRole;
+        cloudData.accounts[j].nickName = targetReg.name || cloudData.accounts[j].nickName;
+        cloudData.accounts[j].village = targetReg.village || cloudData.accounts[j].village;
+        accountExists = true;
+        break;
+      }
+    }
+    if (!accountExists) {
+      // 没有账号，创建新正式账号（手机号后6位为默认密码）
+      var defaultPwd = phone.length >= 6 ? phone.slice(-6) : '123456';
+      var newAccount = {
+        id: 'acc_' + Date.now(),
+        account: phone,
+        phone: phone,
+        nickName: targetReg.name || phone,
+        role: targetReg.role || targetReg.type || '普通用户',
+        currentRole: targetReg.role || targetReg.type || '普通用户',
+        village: targetReg.village || '',
+        password: defaultPwd,
+        createTime: Date.now(),
+        status: 'active'
+      };
+      cloudData.accounts.push(newAccount);
+      console.log('[审核] 创建新账号:', newAccount.account, '角色:', newAccount.role, '默认密码:', defaultPwd);
+    }
+  }
+
+  // 村主任还需加入村庄列表
+  if (targetReg && (targetReg.role === '村主任' || targetReg.type === '村主任')) {
+    if (!cloudData.villages) cloudData.villages = [];
+    var vExists = false;
+    for (var v = 0; v < cloudData.villages.length; v++) {
+      if (cloudData.villages[v].name === targetReg.village) { vExists = true; break; }
+    }
+    if (!vExists && targetReg.village) {
+      cloudData.villages.push({
+        id: targetReg.id, name: targetReg.village,
+        chiefName: targetReg.name, phone: targetReg.phone, status: '已通过'
+      });
+    }
+  }
+
+  // 保存到云端
+  saveToCloud(function(ok) {
+    console.log('[审核] 云端保存:', ok ? '成功' : '失败');
+    callback(ok);
+  });
+}
+
 // ====== 管理员账号 ======
 var ADMIN_USER = S.get('admin_user', 'admin');
 var ADMIN_PWD = S.get('admin_pwd', 'admin123');
@@ -163,22 +232,63 @@ function renderAdmin() {
   html += '</div>';
   
   html += '<div class="tab">';
-  html += '<div class="tab-item' + (curTab==='chiefs'?' active':'') + '" onclick="switchTab(\'chiefs\')">村主任</div>';
+  html += '<div class="tab-item' + (curTab==='chiefs'?' active':'') + '" onclick="switchTab(\'chiefs\')">👔+📢 村长+公告</div>';
   html += '<div class="tab-item' + (curTab==='roles'?' active':'') + '" onclick="switchTab(\'roles\')">其他角色</div>';
   html += '<div class="tab-item' + (curTab==='villages'?' active':'') + '" onclick="switchTab(\'villages\')">村庄</div>';
-  html += '<div class="tab-item' + (curTab==='announce'?' active':'') + '" onclick="switchTab(\'announce\')">公告</div>';
   html += '</div>';
   
   if (curTab === 'chiefs') {
+    // ===== 村长审核区 =====
+    html += '<div style="background:#E8F5E9;border-radius:8px;padding:12px;margin-bottom:16px;">';
+    html += '<div style="font-weight:bold;color:#2E7D32;font-size:15px;margin-bottom:8px;">👔 村长审核</div>';
     var chiefs = regs.filter(function(r) { return (r.role || r.type) === '村主任'; });
-    if (!chiefs.length) { html += '<div class="card"><div class="empty">暂无村主任申请</div></div>'; }
+    if (!chiefs.length) { html += '<div class="empty" style="padding:10px;">暂无村主任申请</div>'; }
     else {
       chiefs.forEach(function(r) {
         html += renderCard(r);
       });
     }
+    html += '</div>';
+
+    // ===== 公告区（移到这里，和村长审核同一界面） =====
+    html += '<div style="background:#FFF8E1;border-radius:8px;padding:12px;margin-bottom:16px;">';
+    html += '<div style="font-weight:bold;color:#F57C00;font-size:15px;margin-bottom:8px;">📢 发布公告</div>';
+    html += '<input type="text" id="announceTitle" placeholder="公告标题" style="margin-bottom:8px;">';
+    html += '<textarea id="announceContent" placeholder="公告内容" rows="2" style="margin-bottom:8px;"></textarea>';
+    html += '<p style="font-size:12px;color:#666;margin:4px 0;">发布到村庄（不选则全平台）</p>';
+    if (villages.length) {
+      html += '<div class="village-list">';
+      villages.forEach(function(v) {
+        html += '<label><input type="checkbox" class="village-cb" value="' + esc(v.name) + '"> ' + esc(v.name) + '</label>';
+      });
+      html += '</div>';
+    }
+    html += '<button onclick="saveAnnounce()" style="background:#F57C00;margin-top:8px;">发布公告</button>';
+    html += '</div>';
+
+    // 已有公告列表
+    if (announce.length) {
+      html += '<div class="card"><h3 style="color:#F57C00;margin-bottom:10px;">📋 已有公告</h3>';
+      announce.forEach(function(a) {
+        var villStr = (a.villages && a.villages.length) ? ' | 村庄:' + a.villages.join('、') : ' | 全平台';
+        html += '<div class="announce-item">' +
+          '<div class="announce-title">' + esc(a.title || '无标题') + '</div>' +
+          '<div class="announce-text">' + esc(a.text || a.content || '') + '</div>' +
+          '<div class="announce-meta">' + esc(a.time || '') + villStr + '</div>' +
+          '<button class="btn-no" style="margin-top:6px;padding:6px;" onclick="deleteAnnounce(\'' + a.id + '\')">删除</button>' +
+        '</div>';
+      });
+      html += '</div>';
+    }
   } else if (curTab === 'roles') {
-    var others = regs.filter(function(r) { return (r.role || r.type) !== '村主任' && r.role !== '管理员' && r.role !== '游客'; });
+    // 显示所有待审核/待村主任审核的非村长角色申请
+    var others = regs.filter(function(r) {
+      var role = r.role || r.type || '';
+      var status = r.status || '';
+      if (role === '村主任' || role === '管理员' || role === '游客') return false;
+      // 只显示待审核或待村主任审核的申请（排除已通过/已拒绝）
+      return status === '待审核' || status === '待村主任审核';
+    });
     if (!others.length) { html += '<div class="card"><div class="empty">暂无其他角色申请</div></div>'; }
     else {
       others.forEach(function(r) {
@@ -196,37 +306,6 @@ function renderAdmin() {
       });
       html += '</div>';
     }
-  } else if (curTab === 'announce') {
-    html += '<div class="card">';
-    html += '<h3 style="color:#37474F;margin-bottom:10px;">📢 发布公告</h3>';
-    html += '<input type="text" id="announceTitle" placeholder="公告标题">';
-    html += '<textarea id="announceContent" placeholder="公告内容" rows="3"></textarea>';
-    html += '<p style="font-size:12px;color:#666;margin:8px 0 4px;">发布到村庄（不选则全平台显示）</p>';
-    if (villages.length) {
-      html += '<div class="village-list">';
-      villages.forEach(function(v) {
-        html += '<label><input type="checkbox" class="village-cb" value="' + esc(v.name) + '"> ' + esc(v.name) + '</label>';
-      });
-      html += '</div>';
-    } else {
-      html += '<div class="empty" style="padding:10px;">暂无村庄</div>';
-    }
-    html += '<button onclick="saveAnnounce()">发布</button>';
-    html += '</div>';
-    
-    if (announce.length) {
-      html += '<div class="card"><h3 style="color:#37474F;margin-bottom:10px;">已有公告</h3>';
-      announce.forEach(function(a) {
-        var villStr = (a.villages && a.villages.length) ? ' | 村庄:' + a.villages.join('、') : ' | 全平台';
-        html += '<div class="announce-item">' +
-          '<div class="announce-title">' + esc(a.title || '无标题') + '</div>' +
-          '<div class="announce-text">' + esc(a.text || a.content || '') + '</div>' +
-          '<div class="announce-meta">' + esc(a.time || '') + villStr + '</div>' +
-          '<button class="btn-no" style="margin-top:6px;padding:6px;" onclick="deleteAnnounce(\'' + a.id + '\')">删除</button>' +
-        '</div>';
-      });
-      html += '</div>';
-    }
   }
   
   document.getElementById('app').innerHTML = html;
@@ -239,6 +318,7 @@ function renderCard(r) {
   var phone = esc(r.phone || r.tel || '');
   var time = esc(r.createdAt || r.time || '');
   var badge = r.status === '待审核' ? '<span class="badge badge-w">待审核</span>' :
+              r.status === '待村主任审核' ? '<span class="badge badge-w">待村主任审核</span>' :
               r.status === '已通过' ? '<span class="badge badge-g">已通过</span>' :
               '<span class="badge badge-r">已拒绝</span>';
   
@@ -270,70 +350,51 @@ window.switchTab = function(tab) { curTab = tab; renderAdmin(); };
 
 window.doApprove = function(id) {
   if (!id) return;
-  var updated = false;
-  var approvedRole = null;   // 新增：记录审核通过的角色
-  var approvedPhone = null; // 新增：记录用户手机号
+  var regItem = null;
   if (cloudData.registrations) {
     for (var i = 0; i < cloudData.registrations.length; i++) {
       if (cloudData.registrations[i].id == id) {
-        cloudData.registrations[i].status = '已通过';
-        approvedRole = cloudData.registrations[i].role || cloudData.registrations[i].type || '';
-        approvedPhone = cloudData.registrations[i].phone || '';
-        // 同步到村庄
-        if ((cloudData.registrations[i].role || cloudData.registrations[i].type) === '村主任') {
-          if (!cloudData.villages) cloudData.villages = [];
-          var village = cloudData.registrations[i].village;
-          var exists = false;
-          for (var j = 0; j < cloudData.villages.length; j++) {
-            if (cloudData.villages[j].name === village) { exists = true; break; }
-          }
-          if (!exists) {
-            cloudData.villages.push({
-              id: cloudData.registrations[i].id,
-              name: village,
-              chiefName: cloudData.registrations[i].name,
-              phone: cloudData.registrations[i].phone,
-              status: '已通过'
-            });
-          }
-        }
-        updated = true;
-        // 关键修复：同步更新用户账号中的角色
-        if (approvedPhone && approvedRole) {
-          if (!cloudData.accounts) cloudData.accounts = [];
-          var userIdx = -1;
-          for (var a = 0; a < cloudData.accounts.length; a++) {
-            if (cloudData.accounts[a].phone === approvedPhone || cloudData.accounts[a].id === cloudData.registrations[i].accountId) {
-              userIdx = a; break;
-            }
-          }
-          if (userIdx >= 0) {
-            cloudData.accounts[userIdx].currentRole = approvedRole;
-            cloudData.accounts[userIdx].role = approvedRole;  // 同时更新 role 字段（profile.html 读这个）
-            console.log('[审核] 已更新账号角色：', cloudData.accounts[userIdx].username || cloudData.accounts[userIdx].phone, '→', approvedRole);
-          } else {
-            console.warn('[审核] 未找到对应账号，phone=' + approvedPhone);
-          }
-        }
+        regItem = cloudData.registrations[i];
         break;
       }
     }
   }
-  if (!updated) {
-    var localRegs = S.get('registrations', []);
-    for (var k = 0; k < localRegs.length; k++) {
-      if (localRegs[k].id == id) { localRegs[k].status = '已通过'; S.set('registrations', localRegs); break; }
-    }
-  } else {
-    S.set('registrations', cloudData.registrations);
-    if (cloudData.villages) S.set('villages', cloudData.villages);
-    if (cloudData.accounts) S.set('accounts', cloudData.accounts);
-    saveToCloud(function(ok){
-      console.log('[审核] 云端保存结果：', ok ? '成功' : '失败');
+  if (!regItem) { alert('未找到该申请记录'); return; }
+
+  var approvedRole = regItem.role || regItem.type || '';
+  var approvedPhone = regItem.phone || '';
+
+  // 关键修复：使用 cloudApproveRegistration（会同时更新申请状态 + 创建正式账号）
+  if (typeof cloudApproveRegistration === 'function') {
+    cloudApproveRegistration(id, function(ok) {
+      if (ok) {
+        // 同步本地
+        if (cloudData.accounts) S.set('accounts', cloudData.accounts);
+        if (cloudData.villages) S.set('villages', cloudData.villages);
+        S.set('registrations', cloudData.registrations);
+        renderAdmin();
+        var defaultPwd = approvedPhone.length >= 6 ? approvedPhone.slice(-6) : '123456';
+        alert('已通过！\n\n账号「' + (regItem.name || approvedPhone) + '」已创建！\n手机号（登录账号）：' + approvedPhone + '\n默认密码：' + defaultPwd + '\n角色：' + approvedRole + '\n\n请通知用户在登录页使用手机号+密码登录。');
+      } else {
+        alert('云端同步失败，请重试');
+        renderAdmin();
+      }
     });
+  } else {
+    // cloud_db.js 未加载时，降级为本地处理（不创建账号）
+    if (cloudData.registrations) {
+      for (var i = 0; i < cloudData.registrations.length; i++) {
+        if (cloudData.registrations[i].id == id) {
+          cloudData.registrations[i].status = '已通过';
+          break;
+        }
+      }
+    }
+    S.set('registrations', cloudData.registrations);
+    saveToCloud(function(){});
+    renderAdmin();
+    alert('已通过（离线模式，账号未创建）！请刷新后重试。');
   }
-  renderAdmin();
-  alert('已通过！\n\n用户账号已同步更新角色：' + (approvedRole||'') + '\n\n用户重新登录后即可生效。');
 };
 
 window.doReject = function(id) {
@@ -452,7 +513,10 @@ window.showSettings = function() {
   alert('已保存');
 };
 
-if (isLogin) { loadFromCloud(function() { renderAdmin(); }); } else { renderLogin(); }
+// 每次打开admin.html都强制显示登录页（不清除sessionStorage，只是不自动登录）
+// 如果想自动登录（基于sessionStorage），把下面注释去掉：
+// if (isLogin) { loadFromCloud(function() { renderAdmin(); }); } else { renderLogin(); }
+renderLogin();
 </script>
 </body>
 </html>
