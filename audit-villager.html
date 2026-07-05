@@ -177,7 +177,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
     // 在 accounts 里查找或创建村民账号
     var accounts = Storage.get('accounts', []);
 
-    // 若该手机号已有待审核临时账号，则更新为正式村民账号（包含密码兜底）
+    // 若该手机号已有待审核临时账号，则更新为正式村民账号（从本地账号记录获取密码）
     var updated = false;
     for (var k = 0; k < accounts.length; k++) {
       if (accounts[k].phone === target.phone) {
@@ -185,19 +185,29 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
         accounts[k].village = target.village || myVillage;
         accounts[k].status = 'active';
         accounts[k].nickName = target.name || target.phone;
-        // 确保有密码（兼容旧账号）
+        // 确保有密码：优先用本地账号的密码，其次用手机后6位兜底
         if (!accounts[k].password) {
           accounts[k].password = (target.phone || '').slice(-6) || '123456';
         }
         updated = true;
-        console.log('[入驻审核] 更新临时账号为村民:', target.phone);
+        console.log('[入驻审核] 更新临时账号为村民:', target.phone, '密码:', accounts[k].password);
         break;
       }
     }
 
-    // 若不存在账号，则创建新账号
+    // 若不存在账号，则创建新账号（密码从本地账号记录读取，本地没有则用手机后6位）
     if (!updated) {
-      var pwd = (target.phone || '').slice(-6) || '123456';
+      var pwd = '123456';
+      // 先从本地已有账号记录查找密码（村民注册时写入的）
+      for (var pk = 0; pk < accounts.length; pk++) {
+        if (accounts[pk].phone === target.phone && accounts[pk].password) {
+          pwd = accounts[pk].password;
+          break;
+        }
+      }
+      if (pwd === '123456' && target.phone) {
+        pwd = target.phone.slice(-6);
+      }
       accounts.push({
         id: 'acc_' + Date.now(),
         account: target.phone,
