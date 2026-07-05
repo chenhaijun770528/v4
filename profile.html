@@ -216,6 +216,10 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;min-height:100vh
     if (currentRole === '村民') {
       menus.push({ icon: '✍️', text: '提交上架申请', action: "location.href='submit-goods.html'" });
     }
+    // 按摩技师专属菜单（审核通过后可见）
+    if (currentRole === '按摩技师') {
+      menus.push({ icon: '💆', text: '我的技师资料', action: "location.href='massage-list.html'" });
+    }
     // 通用菜单
     menus.push({ icon: '🔄', text: '手动刷新云端数据', action: "manualRefresh()" });
     menus.push({ icon: '🚪', text: '退出登录', action: "doLogout()" });
