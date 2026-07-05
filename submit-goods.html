@@ -205,6 +205,27 @@ textarea.form-input { resize: vertical; min-height: 80px; }
     apps.push(newApp);
     Storage.set(key, apps);
 
+    // 云端同步（确保申请在关联设备上可见）
+    if (typeof cloudSave === 'function') {
+      var cd = {
+        registrations: Storage.get('registrations', []),
+        accounts: Storage.get('accounts', []),
+        villages: Storage.get('villages', []),
+        products: Storage.get('products', []),
+        food: Storage.get('food', []),
+        camps: Storage.get('camps', []),
+        product_applications: key === 'product_applications' ? apps : Storage.get('product_applications', []),
+        food_applications: key === 'food_applications' ? apps : Storage.get('food_applications', []),
+        camp_applications: key === 'camp_applications' ? apps : Storage.get('camp_applications', []),
+        announcements: Storage.get('announcements', [])
+      };
+      cloudSave(cd).then(function() {
+        console.log('[提交申请] 云端同步成功');
+      }).catch(function(e) {
+        console.log('[提交申请] 云端同步失败:', e);
+      });
+    }
+
     toast('✅ 申请已提交，等待村主任审核');
     currentImgBase64 = '';
     btn.disabled = false;
