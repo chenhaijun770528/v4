@@ -69,7 +69,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
     return;
   }
 
-  var myVillage = user.village || '';
+  var myVillage = (user.village || '').trim();
   if (!myVillage) {
     app.innerHTML = '<div class="empty"><div class="empty-icon">⚠️</div>您的账号未绑定村庄，请联系管理员<div style="margin-top:12px;"><button class="btn-ok" onclick="location.href=\'profile.html\'">返回</button></div></div>';
     return;
@@ -114,7 +114,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
   function render(regs) {
     // 过滤：本村庄 + 待村主任审核
     var pending = regs.filter(function(r) {
-      return (r.village || '') === myVillage && r.status === '待村主任审核';
+      return (r.village || '').trim() === myVillage && r.status === '待村主任审核';
     });
 
     var html = '<div class="notice-bar">🏘️ 管理村庄：' + esc(myVillage) + ' | 待审核入驻申请：' + pending.length + ' 条</div>';
@@ -139,7 +139,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
 
     // 已处理记录
     var processed = regs.filter(function(r) {
-      return (r.village || '') === myVillage && r.status !== '待村主任审核';
+      return (r.village || '').trim() === myVillage && r.status !== '待村主任审核';
     });
     if (processed.length > 0) {
       html += '<div style="font-size:13px;color:#999;margin:16px 0 8px;font-weight:bold;">已处理记录</div>';
