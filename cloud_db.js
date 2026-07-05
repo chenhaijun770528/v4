@@ -1,11 +1,10 @@
 // cloud_db.js - 统一的 Supabase 云端数据模块
-// 所有页面通过这个模块读写云端数据
-
+// 包含：registrations + accounts 两套数据同步
 var SUPABASE_URL = 'https://eivqbbxyllsorbvgqsju.supabase.co';
 var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpdnFiYnh5bGxzb3Jidmdxc2p1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MTIzMDksImV4cCI6MjA5ODI4ODMwOX0.QeKnbo1cgA0yGMOEydML3PNXatH1V1QXfW0hyxRy7KY';
 var ROW_ID = 'init';
 
-// 兼容 profile.html 和其他页面的旧 API 调用
+// 兼容旧 API
 var CloudDB = {
   loadFromPublic: function() { return cloudLoad(); },
   addRegistration: cloudAddRegistration,
@@ -26,7 +25,7 @@ function cloudReq(method, path, body) {
     xhr.onreadystatechange = function() {
       if (xhr.readyState === 4) {
         if (xhr.status >= 200 && xhr.status < 300) {
-          try { resolve(JSON.parse(xhr.responseText)); } 
+          try { resolve(JSON.parse(xhr.responseText)); }
           catch(e) { resolve(xhr.responseText); }
         } else {
           reject({ status: xhr.status, msg: xhr.responseText });
@@ -49,13 +48,53 @@ function cloudSave(allData) {
   return cloudReq('PATCH', 'village_data?id=eq.' + ROW_ID, { data: allData });
 }
 
-// 获取所有注册申请
-function cloudGetRegistrations() {
+// 获取云端账号列表（返回 accounts 数组）
+function cloudGetAllAccounts() {
   return cloudLoad().then(function(rows) {
-    if (rows && rows.length > 0 && rows[0].data && rows[0].data.registrations) {
-      return rows[0].data.registrations;
+    var allData = { accounts: [] };
+    if (rows && rows.length > 0 && rows[0].data) {
+      allData = rows[0].data;
     }
-    return [];
+    return allData.accounts || [];
+  });
+}
+
+// 添加一个正式账号（审核通过时调用）
+function cloudAddAccount(accountInfo) {
+  return cloudLoad().then(function(rows) {
+    var allData = { food:[],camps:[],accounts:[],messages:[],products:[],villages:[],announcements:[],registrations:[] };
+    if (rows && rows.length > 0) {
+      allData = Object.assign(allData, rows[0].data);
+    }
+    if (!allData.accounts) allData.accounts = [];
+    // 检查是否已存在（按手机号去重）
+    var exists = false;
+    for (var i = 0; i < allData.accounts.length; i++) {
+      if (allData.accounts[i].phone === accountInfo.phone) {
+        // 已存在则更新角色
+        allData.accounts[i].role = accountInfo.role || allData.accounts[i].role;
+        allData.accounts[i].currentRole = accountInfo.currentRole || accountInfo.role || allData.accounts[i].currentRole;
+        allData.accounts[i].nickName = accountInfo.nickName || allData.accounts[i].nickName;
+        allData.accounts[i].village = accountInfo.village || allData.accounts[i].village;
+        exists = true;
+        break;
+      }
+    }
+    if (!exists) {
+      allData.accounts.push(accountInfo);
+    }
+    return cloudSave(allData);
+  });
+}
+
+// 获取所有注册申请
+function cloudGetAllRegistrations() {
+  return cloudLoad().then(function(rows) {
+    var allData = { registrations: [] };
+    if (rows && rows.length > 0 && rows[0].data) {
+      allData = rows[0].data;
+    }
+    return allData.registrations || [];
   });
 }
 
@@ -63,7 +102,9 @@ function cloudGetRegistrations() {
 function cloudAddRegistration(reg) {
   return cloudLoad().then(function(rows) {
     var allData = { food:[],camps:[],accounts:[],messages:[],products:[],villages:[],announcements:[],registrations:[] };
-    if (rows && rows.length > 0) allData = Object.assign(allData, rows[0].data);
+    if (rows && rows.length > 0) {
+      allData = Object.assign(allData, rows[0].data);
+    }
     if (!allData.registrations) allData.registrations = [];
     allData.registrations.push(reg);
     return cloudSave(allData);
@@ -84,82 +125,110 @@ function cloudUpdateRegistration(regId, updates) {
   });
 }
 
-// 将注册申请转为正式账号
-function cloudApproveRegistration(regId) {
-  return cloudLoad().then(function(rows) {
+// 审核通过：更新申请状态 + 创建正式账号（两件事一起做）
+function cloudApproveRegistration(regId, callback) {
+  cloudLoad().then(function(rows) {
     var allData = { food:[],camps:[],accounts:[],messages:[],products:[],villages:[],announcements:[],registrations:[] };
     if (rows && rows.length > 0) allData = Object.assign(allData, rows[0].data);
-    if (!allData.registrations) return Promise.reject('no registrations');
-    
-    var reg = allData.registrations.find(function(r) { return r.id === regId; });
-    if (!reg) return Promise.reject('not found');
-    
-    // 更新状态
-    allData.registrations = allData.registrations.map(function(r) {
-      if (r.id === regId) return Object.assign({}, r, { status: '已通过', approvedAt: Date.now() });
-      return r;
-    });
-    
-    // 根据角色类型写入对应集合
-    var role = reg.role || '';
-    if (role.indexOf('村主任') >= 0 || role.indexOf('村长') >= 0) {
-      // 写入 villages
-      if (!allData.villages) allData.villages = [];
-      var exists = allData.villages.some(function(v) { return v.name === reg.villageName; });
-      if (!exists) {
-        allData.villages.push({
-          id: 'v' + Date.now(),
-          name: reg.villageName || reg.village || '新村庄',
-          city: reg.city || '',
-          province: reg.province || '',
-          chief: { name: reg.name || '', phone: reg.phone || '' },
-          description: reg.description || '',
-          images: reg.images || [],
-          status: '已认证',
-          createdAt: Date.now()
-        });
+    if (!allData.registrations) allData.registrations = [];
+    if (!allData.accounts) allData.accounts = [];
+
+    var targetReg = null;
+    for (var i = 0; i < allData.registrations.length; i++) {
+      if (allData.registrations[i].id === regId) {
+        allData.registrations[i].status = '已通过';
+        targetReg = allData.registrations[i];
+        break;
       }
-    } else if (role.indexOf('游客') >= 0) {
-      // 游客直接通过
-    } else {
-      // 其他角色写入 accounts
-      if (!allData.accounts) allData.accounts = [];
-      var existsAcc = allData.accounts.some(function(a) { return a.phone === reg.phone; });
-      if (!existsAcc) {
-        allData.accounts.push({
-          id: 'u' + Date.now(),
-          name: reg.name || '',
-          phone: reg.phone || '',
-          role: reg.role || '',
-          status: '已通过',
-          createdAt: Date.now()
+    }
+
+    // 关键：如果该手机号还没有账号，则创建正式账号
+    if (targetReg && targetReg.phone) {
+      var phone = targetReg.phone;
+      var accountExists = false;
+      for (var j = 0; j < allData.accounts.length; j++) {
+        if (allData.accounts[j].phone === phone) {
+          // 已有账号，只更新角色
+          allData.accounts[j].role = targetReg.role || targetReg.type || allData.accounts[j].role;
+          allData.accounts[j].currentRole = targetReg.role || targetReg.type || allData.accounts[j].currentRole;
+          allData.accounts[j].nickName = targetReg.name || allData.accounts[j].nickName;
+          allData.accounts[j].village = targetReg.village || allData.accounts[j].village;
+          accountExists = true;
+          break;
+        }
+      }
+      if (!accountExists) {
+        // 没有账号，创建新正式账号（可登录）
+        // 密码默认设为手机号后6位，用户可在个人中心修改
+        var defaultPwd = phone.length >= 6 ? phone.slice(-6) : '123456';
+        var newAccount = {
+          id: 'acc_' + Date.now(),
+          account: phone,
+          phone: phone,
+          nickName: targetReg.name || phone,
+          role: targetReg.role || targetReg.type || '普通用户',
+          currentRole: targetReg.role || targetReg.type || '普通用户',
+          village: targetReg.village || '',
+          password: defaultPwd,
+          createTime: Date.now(),
+          status: 'active'
+        };
+        allData.accounts.push(newAccount);
+        console.log('[cloudApprove] 创建新账号:', newAccount.account, '角色:', newAccount.role);
+      }
+    }
+
+    // 村主任还需要加入村庄列表
+    if (targetReg && (targetReg.role === '村主任' || targetReg.type === '村主任')) {
+      if (!allData.villages) allData.villages = [];
+      var villageExists = false;
+      for (var v = 0; v < allData.villages.length; v++) {
+        if (allData.villages[v].name === targetReg.village) { villageExists = true; break; }
+      }
+      if (!villageExists && targetReg.village) {
+        allData.villages.push({
+          id: targetReg.id,
+          name: targetReg.village,
+          chiefName: targetReg.name,
+          phone: targetReg.phone,
+          status: '已通过'
         });
       }
     }
-    
+
+    return cloudSave(allData);
+  }).then(function() {
+    if (callback) callback(true);
+  }).catch(function(err) {
+    console.error('[cloudApprove] 失败:', err);
+    if (callback) callback(false);
+  });
+
+
+// ===== 公告相关云端接口 =====
+
+// 获取全部公告（按时间倒序）
+function cloudGetNotice() {
+  return cloudLoad().then(function(rows) {
+    var allData = { notices: [] };
+    if (rows && rows.length > 0 && rows[0].data) {
+      allData = rows[0].data;
+    }
+    var notices = allData.notices || [];
+    notices.sort(function(a, b) { return (b.createTime || 0) - (a.createTime || 0); });
+    return notices;
+  });
+}
+
+// 保存公告列表（完整替换）
+function cloudSaveNotice(list) {
+  return cloudLoad().then(function(rows) {
+    var allData = { food:[],camps:[],accounts:[],messages:[],products:[],villages:[],announcements:[],registrations:[],notices:[] };
+    if (rows && rows.length > 0) {
+      allData = Object.assign(allData, rows[0].data);
+    }
+    allData.notices = list || [];
     return cloudSave(allData);
   });
 }
-
-// 删除一条注册申请
-function cloudRejectRegistration(regId) {
-  return cloudUpdateRegistration(regId, { status: '已拒绝' });
-}
-
-// 获取村庄列表
-function cloudGetVillages() {
-  return cloudLoad().then(function(rows) {
-    if (rows && rows.length > 0 && rows[0].data && rows[0].data.villages) {
-      return rows[0].data.villages;
-    }
-    return [];
-  });
-}
-
-// 写一行测试数据（初始化用）
-function cloudInit() {
-  return cloudReq('GET', 'village_data?id=eq.' + ROW_ID + '&select=id').then(function(rows) {
-    if (rows && rows.length > 0) return rows;
-    return cloudReq('POST', 'village_data', { id: ROW_ID, data: { food:[],camps:[],accounts:[],messages:[],products:[],villages:[],announcements:[],registrations:[] } });
-  });
 }
