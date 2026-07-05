@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>提交按摩技师资料</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+body{background:#f5f5f5;min-height:100vh}
+.header{position:fixed;top:0;left:0;right:0;background:linear-gradient(135deg,#2E7D32,#4CAF50);color:#fff;padding:12px 16px;z-index:100;display:flex;align-items:center;justify-content:space-between}
+.header-title{font-size:18px;font-weight:bold}
+.header-back{font-size:22px;cursor:pointer;padding:4px 8px}
+.container{padding:60px 16px 20px;max-width:600px;margin:0 auto}
+.card{background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.08)}
+.card-title{font-size:16px;font-weight:bold;color:#333;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid #eee}
+.form-group{margin-bottom:14px}
+label{display:block;margin-bottom:6px;font-size:14px;color:#333;font-weight:600}
+label .required{color:#E53935;margin-left:2px}
+input,textarea{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:15px}
+input:focus,textarea:focus{outline:none;border-color:#2E7D32;box-shadow:0 0 0 2px rgba(46,125,50,0.1)}
+textarea{resize:vertical;min-height:80px}
+.tips{font-size:12px;color:#999;margin-top:4px}
+.btn-submit{width:100%;padding:14px;background:linear-gradient(135deg,#2E7D32,#4CAF50);color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:bold;cursor:pointer;margin-top:8px}
+.btn-submit:disabled{opacity:0.6;cursor:not-allowed}
+.notice{background:#FFF8E1;border-radius:8px;padding:12px 14px;font-size:13px;color:#F57C00;margin-bottom:16px;line-height:1.6}
+.notice strong{color:#E65100}
+.user-info{background:#E8F5E9;border-radius:8px;padding:12px 14px;font-size:13px;color:#2E7D32;margin-bottom:16px}
+.user-info div{margin:3px 0}
+.loading-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:999;display:none}
+.loading-box{background:#fff;border-radius:12px;padding:24px 32px;text-align:center;font-size:15px;color:#333}
+</style>
+</head>
+<body>
+<div class="header">
+  <span class="header-back" onclick="history.back()">←</span>
+  <span class="header-title">💆 按摩技师申请</span>
+  <span style="width:40px"></span>
+</div>
+
+<div class="container">
+  <div class="notice">
+    <strong>📋 申请说明：</strong><br>
+    首次提交需村主任审核，审核通过后您的资料将展示在首页按摩板块。<br>
+    审核通过后，如需修改地址等信息，可直接在我的技师资料中编辑，无需再次审核。
+  </div>
+
+  <div class="user-info" id="userInfo">
+    <div>加载中...</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📝 服务信息</div>
+
+    <div class="form-group">
+      <label>服务项目 <span class="required">*</span></label>
+      <input id="serviceItem" placeholder="例如：推拿、足疗、肩颈按摩、艾灸">
+      <div class="tips">填写您擅长的服务项目，多个用顿号分隔</div>
+    </div>
+
+    <div class="form-group">
+      <label>从业年限 <span class="required">*</span></label>
+      <input id="workYear" placeholder="例如：3年">
+    </div>
+
+    <div class="form-group">
+      <label>详细地址 <span class="required">*</span></label>
+      <input id="address" placeholder="例如：幸福村3组25号">
+      <div class="tips">填写您可提供服务的地址，将展示在首页</div>
+    </div>
+
+    <div class="form-group">
+      <label>服务简介</label>
+      <textarea id="desc" placeholder="介绍自身服务特色、资质证书、服务经验等，让村民更了解您"></textarea>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="submitForm()">提交申请（需村主任审核）</button>
+  </div>
+
+  <div style="text-align:center;padding-bottom:20px;">
+    <a href="profile.html" style="color:#2E7D32;font-size:14px;text-decoration:none;">← 返回个人中心</a>
+  </div>
+</div>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-box">提交中，请稍候...</div>
+</div>
+
+<script src="cloud_db.js"></script>
+<script>
+(function() {
+  var Storage = {
+    get: function(k, def) {
+      try { var v = localStorage.getItem('village_' + k); return v ? JSON.parse(v) : def; }
+      catch(e) { return def; }
+    },
+    set: function(k, v) {
+      try { localStorage.setItem('village_' + k, JSON.stringify(v)); return true; }
+      catch(e) { return false; }
+    }
+  };
+
+  var currentUser = Storage.get('user', null);
+  var app = document.getElementById('userInfo');
+
+  if (!currentUser) {
+    app.innerHTML = '<div style="color:#E53935;">⚠️ 请先登录，<a href="login.html" style="color:#2E7D32;">去登录</a></div>';
+    return;
+  }
+
+  var userName = currentUser.username || currentUser.account || currentUser.name || '未知';
+  var userPhone = currentUser.phone || currentUser.account || '';
+  var userVillage = currentUser.village || '';
+  var userRole = currentUser.currentRole || currentUser.role || '';
+
+  if (userRole !== '按摩技师') {
+    app.innerHTML = '<div style="color:#E53935;">⚠️ 只有「按摩技师」角色才能提交技师资料，<a href="profile.html" style="color:#2E7D32;">返回个人中心</a></div>';
+    return;
+  }
+
+  app.innerHTML = '<div>👤 姓名：' + esc(userName) + '</div>' +
+    '<div>📱 电话：' + esc(userPhone) + '</div>' +
+    '<div>🏘️ 村庄：' + esc(userVillage) + '</div>';
+
+  function esc(s) { if (s == null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  window.submitForm = function() {
+    var serviceItem = document.getElementById('serviceItem').value.trim();
+    var workYear = document.getElementById('workYear').value.trim();
+    var address = document.getElementById('address').value.trim();
+    var desc = document.getElementById('desc').value.trim();
+
+    if (!serviceItem) { alert('请填写服务项目'); return; }
+    if (!workYear) { alert('请填写从业年限'); return; }
+    if (!address) { alert('请填写详细地址'); return; }
+
+    var btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = '提交中...';
+    showLoading(true);
+
+    var techApply = {
+      id: 'tec' + Date.now(),
+      village: userVillage,
+      userName: userName,
+      phone: userPhone,
+      address: address,
+      serviceItem: serviceItem,
+      workYear: workYear,
+      desc: desc,
+      status: '待村主任审核',
+      createAt: Date.now()
+    };
+
+    // 1. 写入本地 storage
+    var apps = Storage.get('technician_applications', []);
+    // 检查是否已有待审核记录
+    var existing = apps.findIndex(function(a) { return a.phone === userPhone && a.status === '待村主任审核'; });
+    if (existing >= 0) {
+      apps[existing] = techApply;
+    } else {
+      apps.push(techApply);
+    }
+    Storage.set('technician_applications', apps);
+
+    // 2. 云端同步
+    if (typeof cloudSaveTechnicianApplications === 'function') {
+      cloudSaveTechnicianApplications(apps).then(function() {
+        showLoading(false);
+        alert('✅ 申请已提交！\n\n请等待村主任审核，审核通过后您的资料将展示在首页按摩板块。');
+        btn.disabled = false;
+        btn.textContent = '提交申请（需村主任审核）';
+        location.href = 'profile.html';
+      }).catch(function(err) {
+        showLoading(false);
+        alert('本地已保存，但云端同步失败，请稍后重试');
+        btn.disabled = false;
+        btn.textContent = '提交申请（需村主任审核）';
+        location.href = 'profile.html';
+      });
+    } else {
+      // 无云端接口，本地保存即可
+      showLoading(false);
+      alert('✅ 申请已提交！\n\n请等待村主任审核，审核通过后您的资料将展示在首页按摩板块。');
+      btn.disabled = false;
+      btn.textContent = '提交申请（需村主任审核）';
+      location.href = 'profile.html';
+    }
+  };
+
+  function showLoading(show) {
+    document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+  }
+})();
+</script>
+</body>
+</html>
