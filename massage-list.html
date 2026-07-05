@@ -246,22 +246,41 @@ function saveMyProfile() {
 }
 
 function init() {
-  renderList();
+  // 从云端同步registrations，再渲染（确保看到最新审核状态）
+  if (typeof cloudLoad === 'function') {
+    cloudLoad().then(function(rows) {
+      try {
+        var cloudData = (rows && rows.length > 0 && rows[0].data) ? rows[0].data : {};
+        if (cloudData.registrations) Storage.set('registrations', cloudData.registrations);
+      } catch(e) {}
+      renderList();
+    }).catch(function() {
+      renderList();
+    });
+  } else {
+    renderList();
+  }
 }
 
 function renderList() {
   var regs = Storage.get("registrations", []);
   var list = document.getElementById("list");
   var countEl = document.getElementById("count");
+  var currentUser = getCurrentUser();
+  var userVillage = currentUser ? (currentUser.village || '') : '';
   var therapists = [];
   for (var i = 0; i < regs.length; i++) {
-    if (regs[i].role === "按摩师" && regs[i].status === "已通过") {
-      therapists.push({ data: regs[i], index: i });
+    var r = regs[i];
+    // 匹配：角色为"按摩技师"且状态为"已通过"（兼容旧"按摩师"名称）
+    if ((r.role === "按摩技师" || r.role === "按摩师") && r.status === "已通过") {
+      // 村庄隔离：仅显示本村或无村庄的数据
+      if (userVillage && r.village && r.village !== userVillage) continue;
+      therapists.push({ data: r, index: i });
     }
   }
   countEl.textContent = therapists.length;
 
-  // 检查当前用户是否是按摩师
+  // 检查当前用户是否是按摩技师
   var myTherapist = getMyTherapistRecord(regs);
   var myRecordId = myTherapist ? myTherapist.record.id : null;
 
