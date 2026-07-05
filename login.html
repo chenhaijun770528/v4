@@ -189,18 +189,32 @@
           if (rows && rows.length > 0 && rows[0].data && rows[0].data.accounts) {
             // 云端有账号数据，同步到本地
             var cloudAccounts = rows[0].data.accounts;
-            // 合并：云端账号优先（包含最新审核状态），本地账号兜底
+            // 合并：云端账号包含审核状态，本地账号包含密码，两者互补
             var merged = [];
             var phoneMap = {};
-            // 先加入云端账号（去重）
+            // 先加入云端账号
             for (var ci = 0; ci < cloudAccounts.length; ci++) {
               var cp = cloudAccounts[ci].phone || cloudAccounts[ci].account;
               if (cp) { phoneMap[cp] = cloudAccounts[ci]; merged.push(cloudAccounts[ci]); }
             }
-            // 再加入本地独有的账号（云端没有的）
+            // 再加入本地账号：云端没有的直接加，云端有但本地有 password 的要合并
             for (var li = 0; li < accounts.length; li++) {
               var lp = accounts[li].phone || accounts[li].account;
-              if (lp && !phoneMap[lp]) { merged.push(accounts[li]); }
+              if (!lp) continue;
+              if (!phoneMap[lp]) {
+                // 云端没有此账号，直接加入
+                merged.push(accounts[li]);
+              } else if (accounts[li].password && !phoneMap[lp].password) {
+                // 云端有但无密码，本地有密码 → 用本地的覆盖（保留审核状态+获得密码）
+                var existingIdx = -1;
+                for (var mi = 0; mi < merged.length; mi++) {
+                  var mp = merged[mi].phone || merged[mi].account;
+                  if (mp === lp) { existingIdx = mi; break; }
+                }
+                if (existingIdx >= 0) {
+                  merged[existingIdx].password = accounts[li].password;
+                }
+              }
             }
             Storage.set('accounts', merged);
             accounts = merged;
