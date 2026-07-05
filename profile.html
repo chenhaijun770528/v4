@@ -207,6 +207,10 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;min-height:100vh
     var menus = [
       { icon: '🏠', text: '返回首页', action: "location.href='index.html'" }
     ];
+    // 管理员专属菜单
+    if (currentRole === '管理员') {
+      menus.push({ icon: '📢', text: '发布全平台公告', action: "location.href='publish-notice.html'" });
+    }
     // 村主任专属菜单
     if (currentRole === '村主任') {
       menus.push({ icon: '👥', text: '本村入驻审核', action: "location.href='audit-villager.html'" });
