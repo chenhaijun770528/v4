@@ -231,4 +231,60 @@ function cloudSaveNotice(list) {
     return cloudSave(allData);
   });
 }
+
+// ===== 技师列表云端接口 =====
+
+// 获取已通过展示的技师列表
+function cloudGetTechnicianList() {
+  return cloudLoad().then(function(rows) {
+    var allData = { technician_list: [] };
+    if (rows && rows.length > 0 && rows[0].data) allData = rows[0].data;
+    return allData.technician_list || [];
+  });
+}
+
+// 保存技师申请列表（审核用）
+function cloudSaveTechnicianApplications(list) {
+  return cloudLoad().then(function(rows) {
+    var allData = { food:[],camps:[],accounts:[],messages:[],products:[],villages:[],announcements:[],registrations:[],notices:[],technician_list:[],technician_applications:[] };
+    if (rows && rows.length > 0) allData = Object.assign(allData, rows[0].data);
+    allData.technician_applications = list || [];
+    return cloudSave(allData);
+  });
+}
+
+// 保存已通过展示的技师列表（编辑后直接调用）
+function cloudSaveTechnicianList(list) {
+  return cloudLoad().then(function(rows) {
+    var allData = { food:[],camps:[],accounts:[],messages:[],products:[],villages:[],announcements:[],registrations:[],notices:[],technician_applications:[],technician_list:[] };
+    if (rows && rows.length > 0) allData = Object.assign(allData, rows[0].data);
+    allData.technician_list = list || [];
+    return cloudSave(allData);
+  });
+}
+
+// 审核通过：技师申请 -> 写入technician_list
+function cloudApproveTechnician(id) {
+  return cloudLoad().then(function(rows) {
+    var allData = { food:[],camps:[],accounts:[],messages:[],products:[],villages:[],announcements:[],registrations:[],notices:[],technician_applications:[],technician_list:[] };
+    if (rows && rows.length > 0) allData = Object.assign(allData, rows[0].data);
+    var apps = allData.technician_applications || [];
+    var appItem = null;
+    for (var i = 0; i < apps.length; i++) {
+      if (apps[i].id == id) { appItem = apps[i]; break; }
+    }
+    if (!appItem) return Promise.reject({ msg: '未找到该申请' });
+    appItem.status = '已通过';
+    // 加入展示列表（去重：按phone）
+    var list = allData.technician_list || [];
+    var exist = false;
+    for (var j = 0; j < list.length; j++) {
+      if (list[j].phone === appItem.phone) { list[j] = appItem; exist = true; break; }
+    }
+    if (!exist) list.push(appItem);
+    allData.technician_applications = apps;
+    allData.technician_list = list;
+    return cloudSave(allData);
+  });
+}
 }
