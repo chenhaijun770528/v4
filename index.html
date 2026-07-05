@@ -457,7 +457,7 @@ body {
     </div>
 
     <!-- 公告版面 -->
-    <div id="announcementSection" class="announcement-section" style="display:none;">
+    <div id="announcementSection" class="announcement-section">
       <div class="announcement-header">
         <span style="font-size:16px;font-weight:bold;color:#333;">📢 公告通知</span>
         <span id="announcementBadge" style="background:#F44336;color:white;font-size:11px;padding:1px 6px;border-radius:8px;margin-left:6px;display:none;">NEW</span>
@@ -579,7 +579,7 @@ const DB = {
       totalArea: '4500',
       farmlandArea: '2800',
       commercialArea: '200',
-      description: '幸福村位于苏州市郊区，环境优美，基础���施完善，是著名的生态农业示范村。村内有千年古银杏树、多彩田园，是周末休闲的好去处。',
+      description: '幸福村位于苏州市郊区，环境优美，基础设施完善，是著名的生态农业示范村。村内有千年古银杏树、多彩田园，是周末休闲的好去处。',
       chief: { name: '张建国', phone: '13800138001' },
       scenery: [
         { id: 's1', title: '千年古银杏', desc: '树龄超过800年，树高25米，胸围6米', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=' },
@@ -596,7 +596,7 @@ const DB = {
     {
       id: 'v2',
       name: '阳光村',
-      province: '广��省',
+      province: '广东省',
       city: '广州市',
       population: '4560',
       totalArea: '6200',
@@ -651,7 +651,7 @@ const DB = {
   // 露营基地
   camps: [
     { id: 'c1', name: '星空露营基地', desc: '海拔800米，远离光污染，是观星圣地', price: '188', unit: '顶/晚', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', tags: ['观星', '烧烤', '篝火'], features: ['专业露营帐篷', '天文望远镜租借', '烧烤设备', '24小时热水'] },
-    { id: 'c2', name: '湖畔露营区', desc: '紧邻水库，湖光山色，宁静惬意', price: '158', unit: '顶/晚', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', tags: ['钓鱼', '划船', '亲子'], features: ['湖景帐篷', '免费停车', '钓鱼工具租借', '儿童游���区'] },
+    { id: 'c2', name: '湖畔露营区', desc: '紧邻水库，湖光山色，宁静惬意', price: '158', unit: '顶/晚', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', tags: ['钓鱼', '划船', '亲子'], features: ['湖景帐篷', '免费停车', '钓鱼工具租借', '儿童游乐区'] },
     { id: 'c3', name: '森林木屋营地', desc: '独栋木屋掩映在松林间，呼吸森林负氧离子', price: '288', unit: '间/晚', img: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjYzhlOWNhIi8+PHRleHQgeD0iNTAlIyB5PSI1MCUiIGRvbWluYW50LWJhc2VsaW5lPSJtaWRkbGUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmYiIGZvbnQtc2l6ZT0iMjAiPuWbvueJh+WKoOi9veaZrzwvdGV4dD48L3N2Zz4=', tags: ['森林', '静修', '养生'], features: ['独栋木屋', '独立卫浴', '厨房设施', '森林SPA'] }
   ],
 
@@ -665,7 +665,7 @@ const DB = {
     { id: 'r6', icon: '🎓', name: '大学生', path: 'register-student.html' },
     { id: 'r7', icon: '⚖️', name: '律师事务所', path: 'register-law-firm.html' },
     { id: 'r8', icon: '👨‍💼', name: '律师', path: 'register-lawyer.html' },
-    { id: 'r9', icon: '��', name: '货运司机', path: 'register-truck.html' },
+    { id: 'r9', icon: '🚛', name: '货运司机', path: 'register-truck.html' },
     { id: 'r10', icon: '🚗', name: '顺风车司机', path: 'register-carpool.html' },
     { id: 'r11', icon: '💆', name: '按摩技师', path: 'register-massage.html' }
   ],
@@ -706,7 +706,7 @@ function toast(msg, duration = 2000) {
   setTimeout(() => el.remove(), duration)
 }
 
-// ��储
+// 存储
 const Storage = {
   get(key, defaultVal) {
     try {
@@ -809,7 +809,8 @@ function logout() {
 initSampleData();
       renderBanner()
 
-      loadAnnouncements();      renderVillages()
+      loadAnnouncements();
+      window._onCloudDBReady = function() { loadAnnouncements(); };      renderVillages()
       loadCloudData();
 
 
@@ -821,7 +822,7 @@ initSampleData();
             var regs = cloudData.registrations || [];
             var myInfo = null;
             for (var ai = 0; ai < accounts.length; ai++) {
-              if (accounts[ai].phone === currentUser.phone || accounts[ai].id === currentUser.id) { myInfo = accounts[ai]; break; }
+              if (accounts[ai].phone === currentUser.phone || accounts[ai].id === currentUser.id || accounts[ai].username === currentUser.username) { myInfo = accounts[ai]; break; }
             }
             if (!myInfo) {
               for (var ri = 0; ri < regs.length; ri++) {
@@ -977,31 +978,44 @@ initSampleData();
   
     // 加载公告
     function loadAnnouncements() {
-      var announcements = Storage.get('announcements', []);
-      var section = document.getElementById('announcementSection');
-      var list = document.getElementById('announcementList');
-      var badge = document.getElementById('announcementBadge');
-      if (!announcements || announcements.length === 0) {
-        section.style.display = 'none';
-        return;
-      }
-      section.style.display = 'block';
-      // 检查是否有未读公告（24小时内）
-      var now = Date.now();
-      var hasNew = false;
-      for (var ai = 0; ai < announcements.length; ai++) {
-        if (now - (announcements[ai].createTime || announcements[ai].time) < 86400000) { hasNew = true; break; }
-      }
-      badge.style.display = hasNew ? 'inline-block' : 'none';
-      list.innerHTML = announcements.map(function(a, idx) {
-        var isNew = now - (a.createTime || a.time) < 86400000;
-        return '<div class="announcement-item" onclick="toggleAnnouncement(\' + idx + \')">' +
-          '<div class="announcement-title">' + (isNew ? '🆕 ' : '') + escapeHtml(a.title) + '</div>' +
-          '<div class="announcement-meta">' + formatAnnTime(a.createTime || a.time) + '</div>' +
-          '<div class="announcement-content" id="annContent' + idx + '">' + escapeHtml(a.content || '') + '</div>' +
-          '</div>';
-      }).join('');
+  var section = document.getElementById("announcementSection");
+  var list = document.getElementById("announcementList");
+  var badge = document.getElementById("announcementBadge");
+  if (!section || !list) return;
+
+  list.innerHTML = '<div style="text-align:center;padding:10px;color:#999;">加载中...</div>';
+
+  function doRender(notices) {
+    if (!notices || notices.length === 0) {
+      section.style.display = "none";
+      return;
     }
+    notices.sort(function(a, b) { return (b.createTime || 0) - (a.createTime || 0); });
+    Storage.set("notice_list", notices);
+    section.style.display = "block";
+    var now = Date.now();
+    var hasNew = notices.some(function(a) { return now - (a.createTime || 0) < 86400000; });
+    if (badge) badge.style.display = hasNew ? "inline-block" : "none";
+    list.innerHTML = notices.map(function(a, idx) {
+      var isNew = now - (a.createTime || 0) < 86400000;
+      return '<div class="announcement-item" onclick="toggleAnnouncement(' + idx + ')">' +
+        '<div class="announcement-title">' + (isNew ? "&#11088; " : "") + escapeHtml(a.title || "") + "</div>" +
+        '<div class="announcement-meta">' + formatAnnTime(a.createTime || 0) + "</div>" +
+        '<div class="announcement-content" id="annContent' + idx + '">' + escapeHtml(a.content || "") + "</div>" +
+        "</div>";
+    }).join("");
+  }
+
+  if (typeof cloudGetNotice === "function") {
+    cloudGetNotice().then(function(notices) {
+      doRender(notices || []);
+    }).catch(function() {
+      doRender(Storage.get("notice_list", []));
+    });
+  } else {
+    doRender(Storage.get("notice_list", []));
+  }
+}
 
     function toggleAnnouncement(idx) {
       var el = document.getElementById('annContent' + idx);
@@ -1048,12 +1062,13 @@ initSampleData();
 
 </script>
 <script src="cloud_db.js"></script>
+<script>window._onCloudDBReady && window._onCloudDBReady();</script>
 
 <script>
 // 从云端加载最新数据
 if (window.CloudDB) {
   window.CloudDB.init(function() {
-    console.log("[Index] 云��数据已加载");
+    console.log("[Index] 云端数据已加载");
     // 触发页面重新渲染
     if (typeof renderPage === "function") renderPage();
     else if (typeof init === "function") init();
@@ -1085,7 +1100,7 @@ function renderMassageSection() {
   var html = '';
   for (var si = 0; si < approvedMassage.length; si++) {
     var m = approvedMassage[si];
-    html += '<div class="massage-card" onclick="goMassageDetail('' + (m.id || '') + '')" style="display:flex;align-items:center;gap:12px;padding:12px;background:white;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.08);cursor:pointer;">';
+    html += '<div class="massage-card" onclick="goMassageDetail(\'' + (m.id || '') + '\')" style="display:flex;align-items:center;gap:12px;padding:12px;background:white;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.08);cursor:pointer;">';
     html += '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#81C784,#4CAF50);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">💆</div>';
     html += '<div style="flex:1;">';
     html += '<div style="font-weight:bold;color:#333;font-size:15px;">' + (m.name || '未知') + '</div>';
