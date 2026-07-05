@@ -92,18 +92,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
   }
 
   function loadAndRender() {
-    // 尝试从云端加载
-    if (typeof cloudLoad === 'function') {
-      cloudLoad().then(function(rows) {
-        var cloudData = { registrations: [], villages: [], accounts: [], products: [], food: [], camps: [], announcements: [] };
-        if (rows && rows.length > 0 && rows[0].data) {
-          cloudData = Object.assign(cloudData, rows[0].data);
-        }
-        Storage.set('registrations', cloudData.registrations || []);
-        Storage.set('villages', cloudData.villages || []);
-        Storage.set('accounts', cloudData.accounts || []);
-        render(cloudData.registrations || []);
-      }).catch(function() {
+    // 按豆包方案：优先同步云端全部注册申请，保证能看到手机提交的数据
+    if (typeof cloudGetAllRegistrations === 'function') {
+      cloudGetAllRegistrations().then(function(allRegs) {
+        Storage.set('registrations', allRegs || []);
+        render(allRegs || []);
+      }).catch(function(err) {
         render(Storage.get('registrations', []));
       });
     } else {
