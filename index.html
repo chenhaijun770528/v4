@@ -457,13 +457,7 @@ body {
     </div>
 
     <!-- 公告版面 -->
-    <div id="announcementSection" class="announcement-section">
-      <div class="announcement-header">
-        <span style="font-size:16px;font-weight:bold;color:#333;">📢 公告通知</span>
-        <span id="announcementBadge" style="background:#F44336;color:white;font-size:11px;padding:1px 6px;border-radius:8px;margin-left:6px;display:none;">NEW</span>
-      </div>
-      <div id="announcementList"></div>
-    </div>
+    <div id="noticeWrap" style="padding:12px;"></div>
 
 
     <!-- 轮播图 -->
@@ -809,8 +803,8 @@ function logout() {
 initSampleData();
       renderBanner()
 
-      loadAnnouncements();
-      window._onCloudDBReady = function() { loadAnnouncements(); };      renderVillages()
+      loadHomeData();
+      window._onCloudDBReady = function() { loadHomeData(); };      renderVillages()
       loadCloudData();
 
 
@@ -977,65 +971,64 @@ initSampleData();
     init()
   
     // 加载公告
-    function loadAnnouncements() {
-  var section = document.getElementById("announcementSection");
-  var list = document.getElementById("announcementList");
-  var badge = document.getElementById("announcementBadge");
-  if (!section || !list) return;
+    // HTML 转义函数，防止内容带标签错乱
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
 
-  list.innerHTML = '<div style="text-align:center;padding:10px;color:#999;">加载中...</div>';
+// 首页公告加载渲染（修复内容不显示、支持换行）
+function loadHomeData() {
+  var noticeWrap = document.getElementById('noticeWrap');
+  if (!noticeWrap) return;
+  noticeWrap.innerHTML = '<div style="text-align:center;padding:10px;color:#999;">公告加载中...</div>';
 
-  function doRender(notices) {
-    if (!notices || notices.length === 0) {
-      section.style.display = "none";
+  // 从云端拉取公告
+  function doRender(noticeList) {
+    if (!noticeList || noticeList.length === 0) {
+      noticeWrap.innerHTML = '<div style="background:#f5f5f5;padding:14px;border-radius:8px;color:#666;text-align:center;">暂无平台公告</div>';
       return;
     }
-    notices.sort(function(a, b) { return (b.createTime || 0) - (a.createTime || 0); });
-    Storage.set("notice_list", notices);
-    section.style.display = "block";
+    // 按时间倒序
+    noticeList.sort(function(a, b) { return (b.createTime || 0) - (a.createTime || 0); });
     var now = Date.now();
-    var hasNew = notices.some(function(a) { return now - (a.createTime || 0) < 86400000; });
-    if (badge) badge.style.display = hasNew ? "inline-block" : "none";
-    list.innerHTML = notices.map(function(a, idx) {
-      var isNew = now - (a.createTime || 0) < 86400000;
-      return '<div class="announcement-item" onclick="toggleAnnouncement(' + idx + ')">' +
-        '<div class="announcement-title">' + (isNew ? "&#11088; " : "") + escapeHtml(a.title || "") + "</div>" +
-        '<div class="announcement-meta">' + formatAnnTime(a.createTime || 0) + "</div>" +
-        '<div class="announcement-content" id="annContent' + idx + '">' + escapeHtml(a.content || "") + "</div>" +
-        "</div>";
-    }).join("");
+    var noticeHtml = '';
+    noticeList.forEach(function(item) {
+      var timeStr = new Date(item.createTime || 0).toLocaleString('zh-CN');
+      var rawContent = escapeHtml(item.content || '');
+      var noticeContent = rawContent.replace(/\n/g, '<br>');
+      var isNew = now - (item.createTime || 0) < 86400000;
+      noticeHtml += '<div style="background:#FFF8E1;border:1px solid #FFCC80;border-radius:10px;padding:14px;margin-bottom:10px;">' +
+        '<h3 style="color:#E65100;margin-bottom:6px;font-size:16px;">' + (isNew ? '&#11088; ' : '') + escapeHtml(item.title || '') + '</h3>' +
+        '<div style="color:#333;line-height:1.8;margin:8px 0;white-space:normal;">' + noticeContent + '</div>' +
+        '<span style="font-size:12px;color:#999;">发布时间：' + timeStr + '</span>' +
+        '</div>';
+    });
+    noticeWrap.innerHTML = noticeHtml;
+    // 写入本地缓存
+    Storage.set('notice_list', noticeList);
   }
 
   if (typeof cloudGetNotice === "function") {
     cloudGetNotice().then(function(notices) {
       doRender(notices || []);
-    }).catch(function() {
-      doRender(Storage.get("notice_list", []));
+    }).catch(function(err) {
+      console.log('公告云端同步失败，读取本地缓存', err);
+      doRender(Storage.get('notice_list', []));
     });
   } else {
-    doRender(Storage.get("notice_list", []));
+    doRender(Storage.get('notice_list', []));
   }
 }
 
-    function toggleAnnouncement(idx) {
-      var el = document.getElementById('annContent' + idx);
-      if (!el) return;
-      var parent = el.parentElement;
-      if (parent.classList.contains('expanded')) {
-        parent.classList.remove('expanded');
-      } else {
-        parent.classList.add('expanded');
-      }
-    }
 
-    function formatAnnTime(ts) {
-      var d = new Date(ts);
-      var now = Date.now();
-      var diff = now - ts;
-      if (diff < 3600000) return Math.floor(diff / 60000) + '分钟前';
-      if (diff < 86400000) return Math.floor(diff / 3600000) + '小时前';
-      return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
-    }
+    
+
+    
 
     function escapeHtml(str) {
       var div = document.createElement('div');
