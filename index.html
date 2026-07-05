@@ -1070,34 +1070,49 @@ if (window.CloudDB) {
 
 // 渲染按摩技师板块
 function renderMassageSection() {
-  var regs = Storage.get('registrations', []);
-  var approvedMassage = [];
-  for (var mi = 0; mi < regs.length; mi++) {
-    if (regs[mi].role === '按摩师' && regs[mi].status === '已通过') {
-      approvedMassage.push(regs[mi]);
-    }
-  }
-  
   var section = document.getElementById('massageSection');
   if (!section) return;
-  
-  if (approvedMassage.length === 0) {
+  var list = section.querySelector('.massage-list');
+  if (!list) return;
+
+  var techList = Storage.get('technician_list', []);
+  var approvedList = [];
+
+  if (techList.length > 0) {
+    // 新格式：从 technician_list 读取（已审核通过的展示数据）
+    approvedList = techList.filter(function(t) { return t.status === '已通过'; });
+  }
+
+  if (approvedList.length === 0) {
+    // 兼容旧格式：从 registrations 读取
+    var regs = Storage.get('registrations', []);
+    for (var mi = 0; mi < regs.length; mi++) {
+      if ((regs[mi].role === '按摩师' || regs[mi].role === '按摩技师') && regs[mi].status === '已通过') {
+        approvedList.push(regs[mi]);
+      }
+    }
+  }
+
+  if (approvedList.length === 0) {
     section.style.display = 'none';
     return;
   }
-  
+
   section.style.display = 'block';
-  var list = section.querySelector('.massage-list');
-  if (!list) return;
-  
   var html = '';
-  for (var si = 0; si < approvedMassage.length; si++) {
-    var m = approvedMassage[si];
-    html += '<div class="massage-card" onclick="goMassageDetail(\'' + (m.id || '') + '\')" style="display:flex;align-items:center;gap:12px;padding:12px;background:white;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.08);cursor:pointer;">';
+  for (var si = 0; si < approvedList.length; si++) {
+    var m = approvedList[si];
+    var service = m.serviceItem || m.skill || '专业按摩服务';
+    var years = m.workYear || m.years || '';
+    var addr = m.address || m.curAddress || m.regAddress || '';
+    html += '<div class="massage-card" onclick="goMassageDetail(\'' + (m.id || m.phone || '') + '\')" style="display:flex;align-items:center;gap:12px;padding:12px;background:white;border-radius:8px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.08);cursor:pointer;">';
     html += '<div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#81C784,#4CAF50);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;">💆</div>';
     html += '<div style="flex:1;">';
-    html += '<div style="font-weight:bold;color:#333;font-size:15px;">' + (m.name || '未知') + '</div>';
-    html += '<div style="color:#666;font-size:12px;margin-top:2px;">' + (m.skill || '专业按摩') + ' | ' + (m.years || '经验丰富') + '</div>';
+    html += '<div style="font-weight:bold;color:#333;font-size:15px;">' + (m.userName || m.name || '未知') + '</div>';
+    html += '<div style="color:#666;font-size:12px;margin-top:2px;">' + service + (years ? ' | ' + years : '') + '</div>';
+    if (addr) {
+      html += '<div style="color:#2E7D32;font-size:11px;margin-top:2px;">📍 ' + addr + '</div>';
+    }
     html += '<div style="color:#999;font-size:11px;margin-top:2px;">📞 ' + (m.phone || '') + '</div>';
     html += '</div>';
     html += '<div style="color:#2E7D32;font-size:13px;font-weight:bold;">在线</div>';
