@@ -209,6 +209,7 @@ body{font-family:Arial,sans-serif;background:#f5f5f5;color:#333;min-height:100vh
     ];
     // 管理员专属菜单
     if (currentRole === '管理员') {
+      menus.push({ icon: '⚙️', text: '管理后台', action: "location.href='admin_v2.html'" });
       menus.push({ icon: '📢', text: '发布全平台公告', action: "location.href='publish-notice.html'" });
     }
     // 村主任专属菜单
