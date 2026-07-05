@@ -246,12 +246,13 @@ function saveMyProfile() {
 }
 
 function init() {
-  // 从云端同步registrations，再渲染（确保看到最新审核状态）
+  // 从云端同步registrations和technician_list，再渲染
   if (typeof cloudLoad === 'function') {
     cloudLoad().then(function(rows) {
       try {
         var cloudData = (rows && rows.length > 0 && rows[0].data) ? rows[0].data : {};
         if (cloudData.registrations) Storage.set('registrations', cloudData.registrations);
+        if (cloudData.technician_list) Storage.set('technician_list', cloudData.technician_list);
       } catch(e) {}
       renderList();
     }).catch(function() {
@@ -304,7 +305,7 @@ function renderList() {
     var editBtn = isMe
       ? '<button class="edit-btn" onclick="openEditModal(registrations[' + item.index + '])">✏️ 编辑资料</button>'
       : '';
-    var location = t.curAddress || t.regAddress || "未填写";
+    var location = t.address || t.curAddress || t.regAddress || "未填写";
     var skillTag = t.skill ? '<span class="massage-tag">' + t.skill + '</span>' : '';
     var yearsTag = t.years ? '<span class="massage-tag">' + t.years + '年经验</span>' : '';
     var villageTag = t.village ? '<span class="massage-tag">📍 ' + t.village + '</span>' : '';
