@@ -293,7 +293,10 @@
 
       toast('登录成功！');
       setTimeout(function() {
-        if (found.currentRole && found.currentRole !== 'none') {
+        // 优先用 role 判断（currentRole 可能为 undefined 导致误判跳转选角色页）
+        var hasRole = (found.role && found.role !== '普通用户') ||
+                      (found.currentRole && found.currentRole !== 'none');
+        if (hasRole) {
           location.href = 'index.html';
         } else {
           location.href = 'select-role.html';
