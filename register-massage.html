@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
@@ -598,29 +598,32 @@ function logout() {
   currentUser = null
   localStorage.removeItem('village_user')
 }</script>
-  <script>    function submit() {
+  <script>
+    function submit() {
       var name = document.getElementById('name').value.trim();
       var phone = document.getElementById('phone').value.trim();
-      if (!name) { alert('请输入姓名'); return; }
-      if (!phone || !/^1\d{10}$/.test(phone)) { alert('请输入正确的手机号'); return; }
+      if (!name) { alert('璇疯緭鍏ュ鍚?); return; }
+      if (!phone || !/^1\d{10}$/.test(phone)) { alert('璇疯緭鍏ユ纭殑鎵嬫満鍙?); return; }
       var btn = document.querySelector('button[onclick="submit()"]');
-      if (btn) { btn.disabled = true; btn.textContent = '提交中...'; }
+      if (btn) { btn.disabled = true; btn.textContent = '鎻愪氦涓?..'; }
+      var currentUser = Storage.get('user', null);
+      var userVillage = currentUser ? (currentUser.village || '') : '';
       var regData = {
         id: 'r' + Date.now(),
-        role: '按摩技师',
+        role: '鎸夋懇鎶€甯?,
         name: name,
         phone: phone,
-        status: '待审核',
+        status: '寰呮潙涓讳换瀹℃牳',
+        village: userVillage,
         createdAt: Date.now()
       };
       cloudAddRegistration(regData).then(function() {
-        alert('申请已提交，等待管理员审核！');
-        document.getElementById('regForm').reset();
-        if (btn) { btn.disabled = false; btn.textContent = '提交'; }
-        setTimeout(function() { location.href = 'index.html'; }, 1500);
+        if (btn) { btn.disabled = true; btn.textContent = '宸叉彁浜?; }
+        alert('鐢宠宸叉彁浜わ紝绛夊緟绠＄悊鍛樺鏍革紒');
+        setTimeout(function() { location.href = 'profile.html'; }, 1500);
       }).catch(function(err) {
-        alert('提交失败: ' + (err.msg || JSON.stringify(err)));
-        if (btn) { btn.disabled = false; btn.textContent = '提交'; }
+        if (btn) { btn.disabled = false; btn.textContent = '閲嶆柊鎻愪氦'; }
+        alert('鎻愪氦澶辫触锛岃妫€鏌ョ綉缁滃悗閲嶈瘯銆?);
       });
     }
       // 证件照预览 + Canvas压缩
