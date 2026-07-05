@@ -182,18 +182,50 @@
         return;
       }
 
-      // 查找账号
+      // ===== 关键修复：登录前先从云端同步账号，确保村主任审核后的账号同步到本地 =====
       var accounts = Storage.get('accounts', []);
+      if (typeof cloudLoad === 'function') {
+        cloudLoad().then(function(rows) {
+          if (rows && rows.length > 0 && rows[0].data && rows[0].data.accounts) {
+            // 云端有账号数据，同步到本地
+            var cloudAccounts = rows[0].data.accounts;
+            // 合并：云端账号优先（包含最新审核状态），本地账号兜底
+            var merged = [];
+            var phoneMap = {};
+            // 先加入云端账号（去重）
+            for (var ci = 0; ci < cloudAccounts.length; ci++) {
+              var cp = cloudAccounts[ci].phone || cloudAccounts[ci].account;
+              if (cp) { phoneMap[cp] = cloudAccounts[ci]; merged.push(cloudAccounts[ci]); }
+            }
+            // 再加入本地独有的账号（云端没有的）
+            for (var li = 0; li < accounts.length; li++) {
+              var lp = accounts[li].phone || accounts[li].account;
+              if (lp && !phoneMap[lp]) { merged.push(accounts[li]); }
+            }
+            Storage.set('accounts', merged);
+            accounts = merged;
+          }
+          proceedLogin(account, password, accounts, errorMsg);
+        }).catch(function() {
+          // 云端同步失败，使用本地账号
+          proceedLogin(account, password, accounts, errorMsg);
+        });
+      } else {
+        proceedLogin(account, password, accounts, errorMsg);
+      }
+    }
+
+    function proceedLogin(account, password, accounts, errorMsg) {
       var found = null;
       for (var i = 0; i < accounts.length; i++) {
-        if (accounts[i].account === account) {
+        if (accounts[i].account === account || accounts[i].phone === account) {
           found = accounts[i];
           break;
         }
       }
 
       if (!found) {
-        errorMsg.textContent = '账号不存在';
+        errorMsg.textContent = '账号不存在，请先注册或等待村主任审核通过';
         return;
       }
 
@@ -208,19 +240,14 @@
       }
 
       // 登录成功！保存当前会话
-      // 标记当前账号（设置 _current = true）
-      var accounts = Storage.get('accounts', []);
-      for (var ai = 0; ai < accounts.length; ai++) { delete accounts[ai]._current; }
-      found._current = true;
-      for (var bi = 0; bi < accounts.length; bi++) {
-        if (accounts[bi].id === found.id) { accounts[bi] = found; break; }
-      }
-      Storage.set('accounts', accounts);
+      found.account = found.account || found.username || found.id || '';
+      found.username = found.username || found.account || '';
+      found.id = found.id || found.account || '';
+      if (!found.phone) found.phone = '';
       Storage.set('user', found);
 
-      // 自动补全 currentRole.village（如果缺失）
+      // 自动补全 currentRole.village
       if (found.currentRole && !found.currentRole.village) {
-        // 从 registrations 里查找村庄
         var regs = Storage.get('registrations', []);
         for (var ri = 0; ri < regs.length; ri++) {
           if (regs[ri].account === found.account && regs[ri].village) {
@@ -228,7 +255,6 @@
             break;
           }
         }
-        // 从 villages 数组里找（村主任）
         if (!found.currentRole.village) {
           var villages = Storage.get('villages', []);
           for (var vi = 0; vi < villages.length; vi++) {
@@ -238,11 +264,10 @@
             }
           }
         }
-        // 同步更新 accounts 和 user
         if (found.currentRole.village) {
           var accounts2 = Storage.get('accounts', []);
           for (var ai = 0; ai < accounts2.length; ai++) {
-            if (accounts2[i] && accounts2[ai].id === found.id) {
+            if (accounts2[ai] && accounts2[ai].id === found.id) {
               accounts2[ai].currentRole = found.currentRole;
               break;
             }
@@ -254,11 +279,9 @@
 
       toast('登录成功！');
       setTimeout(function() {
-        // 根据当前角色状态跳转
         if (found.currentRole && found.currentRole !== 'none') {
           location.href = 'index.html';
         } else {
-          // 没有角色，跳转选角色
           location.href = 'select-role.html';
         }
       }, 800);
@@ -311,6 +334,5 @@
     }
 
 </script>
-<script src="cloud_db.js"></script>
 </body>
 </html>
