@@ -87,33 +87,37 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   }
 
-  // 三个申请列表的 storage key
+  // 四个申请列表的 storage key
   var applyKeys = {
     product: 'product_applications',
     food: 'food_applications',
-    camp: 'camp_applications'
+    camp: 'camp_applications',
+    technician: 'technician_applications'
   };
-  // 三个正式展示列表的 storage key
+  // 四个正式展示列表的 storage key
   var showKeys = {
     product: 'products',
     food: 'food',
-    camp: 'camps'
+    camp: 'camps',
+    technician: 'technician_list'
   };
-  var typeNames = { product: '🥬 农产品', food: '🍜 美食', camp: '⛺ 露营地' };
-  var typeEmoji = { product: '🥬', food: '🍜', camp: '⛺' };
+  var typeNames = { product: '🥬 农产品', food: '🍜 美食', camp: '⛺ 露营地', technician: '💆 按摩技师' };
+  var typeEmoji = { product: '🥬', food: '🍜', camp: '⛺', technician: '💆' };
 
   function loadAndRender() {
     if (typeof cloudLoad === 'function') {
       cloudLoad().then(function(rows) {
-        var cd = { registrations:[],villages:[],accounts:[],products:[],food:[],camps:[],announcements:[],product_applications:[],food_applications:[],camp_applications:[] };
+        var cd = { registrations:[],villages:[],accounts:[],products:[],food:[],camps:[],announcements:[],product_applications:[],food_applications:[],camp_applications:[],technician_applications:[],technician_list:[] };
         if (rows && rows.length > 0 && rows[0].data) cd = Object.assign(cd, rows[0].data);
         // 同步到本地
         Storage.set('product_applications', cd.product_applications || []);
         Storage.set('food_applications', cd.food_applications || []);
         Storage.set('camp_applications', cd.camp_applications || []);
+        Storage.set('technician_applications', cd.technician_applications || []);
         Storage.set('products', cd.products || []);
         Storage.set('food', cd.food || []);
         Storage.set('camps', cd.camps || []);
+        Storage.set('technician_list', cd.technician_list || []);
         renderTab(curTab, cd);
       }).catch(function() { render(curTab); });
     } else {
@@ -135,7 +139,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
     });
 
     var html = '<div class="tabs">';
-    ['product','food','camp'].forEach(function(t) {
+    ['product','food','camp','technician'].forEach(function(t) {
       html += '<div class="tab' + (tab === t ? ' active' : '') + '" onclick="switchTab(\'' + t + '\')">' + typeNames[t] + '</div>';
     });
     html += '</div>';
@@ -148,7 +152,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
         var imgHtml = a.img
           ? '<img class="img-thumb" src="' + esc(a.img) + '" onerror="this.outerHTML=\'' + typeEmoji[tab] + '\'">'
           : '<span class="img-thumb">' + typeEmoji[tab] + '</span>';
-        html += '<div class="card">' +
+        if (tab === 'technician') {
+          html += '<div class="card">' +
+            '<div style="display:flex;align-items:center;margin-bottom:8px;">' + imgHtml +
+            '<div><div class="card-name">' + esc(a.userName || a.name || '?') + ' <span class="badge badge-orange">⏳ 待审核</span></div>' +
+            '<div class="card-row">📱 ' + esc(a.phone || '') + '</div>' +
+            '<div class="card-row">🏠 ' + esc(a.village || '') + '</div></div></div>' +
+            '<div class="card-row">💇 服务项目：' + esc(a.serviceItem || a.skill || '未填') + '</div>' +
+            '<div class="card-row">📅 从业年限：' + esc(a.workYear || a.years || '未填') + '</div>' +
+            '<div class="card-row">📍 详细地址：' + esc(a.address || a.curAddress || a.regAddress || '未填') + '</div>' +
+            '<div class="card-row">📝 ' + esc(a.desc || '无简介') + '</div>' +
+            '<div class="card-row">⏰ ' + fmtTime(a.createTime || a.createdAt) + '</div>' +
+            '<div class="btns">' +
+            '<button class="btn-ok" onclick="passApply(\'' + esc(a.id||'') + '\',\'' + tab + '\')">✅ 通过</button>' +
+            '<button class="btn-no" onclick="rejectApply(\'' + esc(a.id||'') + '\',\'' + tab + '\')">❌ 驳回</button>' +
+            '</div></div>';
+        } else {
+          html += '<div class="card">' +
           '<div style="display:flex;align-items:center;margin-bottom:8px;">' + imgHtml +
           '<div><div class="card-name">' + esc(a.name || '?') + ' <span class="badge badge-orange">⏳ 待审核</span></div>' +
           '<div class="card-row">💰 ' + esc(a.price || '?') + '元/' + esc(a.unit || '份') + '</div>' +
@@ -159,6 +179,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
           '<button class="btn-ok" onclick="passApply(\'' + esc(a.id||'') + '\',\'' + tab + '\')">✅ 通过</button>' +
           '<button class="btn-no" onclick="rejectApply(\'' + esc(a.id||'') + '\',\'' + tab + '\')">❌ 驳回</button>' +
           '</div></div>';
+        }
       });
     }
 
@@ -200,34 +221,48 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
     if (!target) { toast('未找到申请'); return; }
     Storage.set(key, apps);
 
-    // 写入正式展示列表
-    var showList = Storage.get(showKey, []);
-    // 检查是否已存在
-    var exists = false;
-    for (var k = 0; k < showList.length; k++) {
-      if (showList[k].id == id) { exists = true; break; }
+    if (tab === 'technician') {
+      // 技师：写入 technician_list（含完整字段）
+      var showList = Storage.get('technician_list', []);
+      var exists = false;
+      for (var k = 0; k < showList.length; k++) {
+        if (showList[k].phone === target.phone) { showList[k] = target; exists = true; break; }
+      }
+      if (!exists) showList.push(target);
+      Storage.set('technician_list', showList);
+      toast('✅ 技师审核通过，首页可见');
+      if (typeof cloudApproveTechnician === 'function') {
+        cloudApproveTechnician(id).catch(function(e) { console.log('云端同步失败', e); });
+      }
+    } else {
+      // 商品：写入对应展示列表
+      var showList = Storage.get(showKey, []);
+      var exists = false;
+      for (var k = 0; k < showList.length; k++) {
+        if (showList[k].id == id) { exists = true; break; }
+      }
+      if (!exists) {
+        showList.push({
+          id: target.id,
+          name: target.name,
+          price: target.price,
+          unit: target.unit,
+          desc: target.desc || '',
+          img: target.img || '',
+          village: target.village || myVillage,
+          userName: target.userName || target.nickName || '',
+          userPhone: target.userPhone || target.phone || '',
+          sellerId: target.userId || '',
+          sellerName: target.userName || '',
+          stock: 999,
+          sales: 0,
+          createTime: Date.now()
+        });
+      }
+      Storage.set(showKey, showList);
+      toast('✅ 上架成功，首页可见');
+      syncToCloud(key, apps, showKey, showList);
     }
-    if (!exists) {
-      showList.push({
-        id: target.id,
-        name: target.name,
-        price: target.price,
-        unit: target.unit,
-        desc: target.desc || '',
-        img: target.img || '',
-        village: target.village || myVillage,
-        userName: target.userName || target.nickName || '',
-        userPhone: target.userPhone || target.phone || '',
-        sellerId: target.userId || '',
-        sellerName: target.userName || '',
-        stock: 999,
-        sales: 0,
-        createTime: Date.now()
-      });
-    }
-    Storage.set(showKey, showList);
-    toast('✅ 上架成功，首页可见');
-    syncToCloud(key, apps, showKey, showList);
     renderTab(curTab, null);
   };
 
@@ -259,6 +294,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: #
       camp_applications: applyKey === 'camp_applications' ? apps : Storage.get('camp_applications', []),
       announcements: Storage.get('announcements', [])
     };
+    if (tab === 'technician') {
+      cd.technician_applications = apps;
+      cd.technician_list = showList;
+    }
     cloudSave(cd).catch(function(e) { console.log('[审核] 云端同步失败:', e); });
   }
 
